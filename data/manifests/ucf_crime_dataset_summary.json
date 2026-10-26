@@ -1,0 +1,78 @@
+{
+  "dataset_name": "UCF-Crime",
+  "archive_file": "ufc-crime.zip",
+  "archive_size_bytes": 11827280807,
+  "total_source_videos": 1900,
+  "split_counts": {
+    "train": 1369,
+    "val": 241,
+    "test": 290
+  },
+  "class_breakdown": {
+    "train": {
+      "Abuse": 41,
+      "Arrest": 38,
+      "Arson": 35,
+      "Assault": 40,
+      "Burglary": 74,
+      "Explosion": 25,
+      "Fighting": 38,
+      "NormalVideos": 680,
+      "RoadAccidents": 108,
+      "Robbery": 123,
+      "Shooting": 23,
+      "Shoplifting": 25,
+      "Stealing": 81,
+      "Vandalism": 38
+    },
+    "val": {
+      "Abuse": 7,
+      "Arrest": 7,
+      "Arson": 6,
+      "Assault": 7,
+      "Burglary": 13,
+      "Explosion": 4,
+      "Fighting": 7,
+      "NormalVideos": 120,
+      "RoadAccidents": 19,
+      "Robbery": 22,
+      "Shooting": 4,
+      "Shoplifting": 4,
+      "Stealing": 14,
+      "Vandalism": 7
+    },
+    "test": {
+      "Abuse": 2,
+      "Arrest": 5,
+      "Arson": 9,
+      "Assault": 3,
+      "Burglary": 13,
+      "Explosion": 21,
+      "Fighting": 5,
+      "NormalVideos": 150,
+      "RoadAccidents": 23,
+      "Robbery": 5,
+      "Shooting": 23,
+      "Shoplifting": 21,
+      "Stealing": 5,
+      "Vandalism": 5
+    }
+  },
+  "random_seed": 42,
+  "val_ratio": 0.15,
+  "sampling_stride": 10,
+  "anomalous_vs_normal": {
+    "train": {
+      "anomalous": 689,
+      "normal": 680
+    },
+    "val": {
+      "anomalous": 121,
+      "normal": 120
+    },
+    "test": {
+      "anomalous": 140,
+      "normal": 150
+    }
+  }
+}
