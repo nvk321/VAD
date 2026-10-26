@@ -1,0 +1,22 @@
+# Training Pipeline Configuration
+training:
+  batch_size: 32            # 32 abnormal bags + 32 normal bags per batch
+  num_epochs: 100
+  early_stopping_patience: 15
+  gradient_clip_norm: 1.0
+
+optimizer:
+  type: "Adam"              # Adam or AdamW
+  learning_rate: 0.0001
+  weight_decay: 0.0005
+  betas: [0.9, 0.999]
+
+scheduler:
+  type: "CosineAnnealingLR" # CosineAnnealingLR or StepLR
+  T_max: 100
+  eta_min: 0.000001
+
+loss:
+  ranking_margin: 1.0       # Max-margin hinge loss margin
+  lambda_smooth: 0.00008    # Temporal smoothness regularization weight
+  lambda_sparse: 0.00008    # Sparsity regularization weight

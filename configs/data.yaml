@@ -1,0 +1,20 @@
+# Dataset & Pipeline Configuration
+dataset:
+  name: "ucf_crime"
+  raw_archive: "ufc-crime.zip"
+  raw_dir: "data/raw/ucf_crime"
+  features_dir: "data/features/ucf_crime"
+  manifests_dir: "data/manifests"
+
+sampling:
+  snippet_length: 16        # Frames per temporal snippet (candidate: 32)
+  frame_sample_rate: 10     # Native frame stride (dataset pre-sampled at 10)
+  spatial_resolution: [224, 224]
+  num_segments_per_video: 32 # Standard segment count for MIL bag padding/interpolation
+
+splits:
+  train_manifest: "data/manifests/ucf_crime_train.csv"
+  val_manifest: "data/manifests/ucf_crime_val.csv"
+  test_manifest: "data/manifests/ucf_crime_test.csv"
+  test_annotations: "data/manifests/ucf_crime_test_annotations.json"
+  val_ratio: 0.15           # Stratified train/val split ratio

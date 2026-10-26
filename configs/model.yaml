@@ -1,0 +1,26 @@
+# Model Architecture Configuration
+backbone:
+  type: "s3d"               # Primary: s3d (1024-d, 1.06GB VRAM, 57.3 clips/s); Fallback: r2plus1d_18 (512-d)
+  pretrained_weights: "KINETICS400_V1"
+  feature_dim: 1024         # 1024 for S3D Inception; 512 for R(2+1)D-18
+  frozen: true              # Mandatory architectural freeze
+
+tcn:
+  # Frozen Architecture: Dilated Causal TCN with residual connections
+  enabled: true             # Ablation flag: false for Exp A (baseline), true for Exp B-D
+  causal: true              # Mandatory architectural freeze: zero future temporal leakage
+
+  # Validated Implementation Parameters (VIP-003, subject to ablation tuning in Exp B):
+  num_layers: 3             # Evaluated candidates: 2, 3, 4
+  dilations: [1, 2, 4]      # Matches num_layers=3; candidate for 4 layers: [1, 2, 4, 8]
+  hidden_channels: 128      # Evaluated candidates: 64, 128, 256
+  kernel_size: 3
+  dropout: 0.2
+  norm_type: "layer"        # layer or batch
+
+mil_head:
+  input_dim: 128            # Matches TCN output channels (or feature_dim if TCN disabled)
+  hidden_dim: 64
+  output_dim: 1             # Continuous anomaly score s_t
+  activation: "sigmoid"
+  dropout: 0.2

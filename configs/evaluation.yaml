@@ -1,0 +1,32 @@
+# Evaluation & Risk Decision Configuration
+metrics:
+  frame_level:
+    roc_auc: true
+    pr_auc: true
+    false_alarm_rate_threshold: 0.5
+  event_level:
+    temporal_iou_threshold: 0.5
+    fragmentation_index: true
+    detection_delay: true
+
+postprocessing:
+  smoothing:
+    method: "ema"           # Candidate comparison: ema, moving_average, gaussian
+    ema_alpha: 0.25         # Weight for current observation in EMA
+    window_size: 11         # For moving average
+    gaussian_sigma: 2.0     # For gaussian filter
+  event_formation:
+    method: "hysteresis"    # hysteresis or simple_threshold
+    threshold_high: 0.60    # Trigger threshold (to be calibrated on validation set)
+    threshold_low: 0.40     # Release threshold (to be calibrated on validation set)
+    min_event_duration: 16  # Min frames (discard transient spikes below 16 frames)
+    gap_tolerance: 5        # Bridging tolerance for micro-dips
+
+risk_layer:
+  weights:
+    magnitude: 0.65         # Peak score weight w_mag
+    duration: 0.35          # Persistence weight w_dur
+  duration_saturation: 150  # Saturation limit in frames (approx 5-10 seconds)
+  calibration:
+    method: "validation_quantiles"  # Calibrate thresholds on validation split
+    quantiles: [0.50, 0.75, 0.90]   # Maps to Base, Medium, High thresholds

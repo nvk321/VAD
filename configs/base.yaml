@@ -1,0 +1,18 @@
+# Base System Configuration
+project:
+  name: "vad-risk-assessment"
+  version: "0.1.0"
+  seed: 42
+  deterministic: true
+
+compute:
+  device: "cuda"            # Auto-detected: cuda if available, else cpu
+  mixed_precision: true     # Use torch.cuda.amp for feature extraction / evaluation
+  num_workers: 4            # Data loader worker threads
+  benchmark_cudnn: true     # torch.backends.cudnn.benchmark
+
+logging:
+  level: "INFO"             # DEBUG, INFO, WARNING, ERROR
+  format: "rich"            # rich or standard
+  log_dir: "logs"
+  save_interval_epochs: 5

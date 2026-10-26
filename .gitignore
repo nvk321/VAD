@@ -1,0 +1,78 @@
+# ==============================================================================
+# Git Ignore Configuration - Video Anomaly Detection & Risk Assessment
+# ==============================================================================
+
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+*.py[cod]
+*$py.class
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Data Directories (Raw data, video frames, intermediate and extracted features MUST NOT be tracked)
+data/raw/**
+data/interim/**
+data/processed/**
+data/features/**
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+!data/features/.gitkeep
+!data/manifests/**
+
+# Media and Raw Dataset Archive Files
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.rar
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.png
+*.jpg
+*.jpeg
+ufc-crime.zip
+ucf-crime.zip
+
+# Reference / External Project Material (Local research aids; strictly uncommitted)
+refrence/
+reference/
+
+# Model Weights and Checkpoints
+checkpoints/
+weights/
+*.pth
+*.pt
+*.onnx
+*.ckpt
+*.bin
+
+# Experiments, Logs, and Metrics Dumps
+logs/
+runs/
+wandb/
+mlruns/
+experiments/*/artifacts/
+experiments/*/checkpoints/
+
+# Environment and Secrets
+.env
+.env.*
+!.env.example
+
+# IDE, OS, and System Artifacts
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
