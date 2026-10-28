@@ -7,9 +7,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-### Planned for Phase 8 / Post-Capstone Extensions
+### Planned for Post-Capstone Extensions
 - Final frozen test set evaluation (290 UCF-Crime benchmark test videos) once defense protocol is locked.
 - Cross-dataset generalization benchmark on XD-Violence features (Exp F).
+
+---
+
+## [0.9.0] - 2026-10-29 — Phase 8: End-to-End Raw Video Streaming, Progressive Demonstration & Operational HUD
+
+### Added
+- **Streaming Raw Video Inference Engine** (`src/inference/video_stream.py`):
+  - Ingests raw video (.mp4, .avi, .mov), decodes frames via OpenCV, and maintains rolling 16-frame buffers.
+  - Sequentially executes frozen S3D backbone and causal TCN without future leakage.
+  - Emits progressive `StreamUpdate` objects with online causal EMA smoothing, hysteresis, and risk scoring.
+- **Operational Surveillance HUD & Video Annotation** (`src/inference/annotated_video.py`):
+  - Renders frame-level status HUD overlay (Banner, Score, Risk Level, Video Time, Incident Duration).
+  - Strictly preserves academic integrity: zero spatial bounding boxes drawn around objects.
+  - Generates downloadable annotated MP4 videos (`outputs/demo/<video>_annotated.mp4`).
+- **Demo Video Synthesis Utility** (`scripts/create_demo_samples.py`):
+  - Prepares ready-to-use sample MP4s (`data/demo_samples/Robbery037.mp4`, `Normal_Videos008.mp4`, `Arson015.mp4`).
+- **Comprehensive 4-Tab Web Application** (`app.py`):
+  - Tab 1: Live Anomaly Detection (Raw Video Upload, Demo Presets, Progressive Timeline, Dynamic Status Card, Downloadable Artifacts).
+  - Tab 2: UCF-Crime Benchmark Examples (Instant pre-cached evaluation across 13 crime classes).
+  - Tab 3: Research & Evaluation Dashboard (Ablation comparisons, ROC/PR curves, LaTeX tables).
+  - Tab 4: System Architecture & Scientific Methodology (Honest academic positioning, 3-task distinction).
+- **Raw Video Hardware Benchmark** (`scripts/benchmark_raw_video.py`):
+  - Measured 130.08 ms snippet latency, **123.0 effective video FPS (4.1x real-time)**, 188.5 MB peak VRAM on RTX 3050.
+- **Automated Raw Video Test Suite** (`tests/test_raw_video_inference.py`):
+  - 6 comprehensive tests covering decoding, buffering, progressive generator, short-video padding, HUD rendering, and annotated video generation. Entire test suite at 38/38 passing.
 
 ---
 
