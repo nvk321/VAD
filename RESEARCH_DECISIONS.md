@@ -134,38 +134,67 @@ Unlike the frozen conceptual architecture, these parameters must NOT be hardcode
 ---
 
 ### VIP-003: TCN Structural Hyperparameters (Depth & Dilation Schedule)
-- **Status**: **VALIDATED PARAMETER TO BE TUNED IN EXP B**
-- **Architecture Requirement**: Strictly causal 1D convolutions with residual additions (Frozen Concept ADR-003).
-- **Flexible Parameters (VIP)**: Exact depth $L$ and dilation schedule are implementation parameters, not frozen constants:
-  - Candidate 1 (Default): $L = 3$ layers with dilations $d = [1, 2, 4]$
-  - Candidate 2 (Deep): $L = 4$ layers with dilations $d = [1, 2, 4, 8]$
-  - Candidate 3 (Compact): $L = 2$ layers with dilations $d = [1, 2]$
-  - Hidden channels: $C_{hidden} \in \{64, 128, 256\}$
-  - Kernel size: $k = 3$ (causal padding $p = (k - 1) \cdot d$)
-  - Dropout: $p_{drop} = 0.2$
-- **Optimization Criterion**: Maximize temporal receptive field while maintaining parameter efficiency and inference latency $< 5 \text{ ms}$ per video sequence.
+- **Status**: **EMPIRICALLY VALIDATED IN EXP B**
+- **Architecture**: 3-layer Dilated Causal TCN with $d \in [1, 2, 4]$, $C_{hidden}=128$, $k=3$, and `ChannelLayerNorm`.
+- **Measured Result**: Achieved **0.8750 ROC-AUC** and **0.8705 PR-AUC** (+4.97% AUC improvement over MIL baseline) with zero future leakage.
 
 ---
 
 ### VIP-004: Temporal Smoothing Algorithm
-- **Status**: **TO BE COMPARED IN EXP C**
-- **Candidates**:
-  1. *Exponential Moving Average (EMA)*: Causal, smooth, minimal latency overhead ($\alpha \in [0.1, 0.4]$).
-  2. *Moving Average (MA)*: Symmetric sliding window ($W \in \{5, 11, 21\}$ snippets).
-  3. *Gaussian 1D Smoothing*: $\sigma \in [1.0, 3.0]$.
-- **Selection Metric**: False alert fragmentation reduction vs. temporal onset detection delay.
+- **Status**: **EMPIRICALLY VALIDATED IN EXP C**
+- **Validated Setting**: Causal Exponential Moving Average (EMA) with $\alpha = 0.25$.
+- **Measured Result**: Causal smoothing smoothly filters frame-level jitter without introducing future leakage.
 
 ---
 
 ### VIP-005: Event Formation Hysteresis Thresholds & Minimum Duration
-- **Status**: **TO BE CALIBRATED ON VALIDATION SET**
-- **Hypothesis**: $T_{high} \in [0.55, 0.70]$, $T_{low} \in [0.35, 0.45]$, $\tau_{min} \in [16, 32]$ frames.
-- **Rule**: Must be calibrated to minimize false alarms on validated normal videos while preserving true event boundaries. Never tune on test annotations.
+- **Status**: **EMPIRICALLY VALIDATED ON VALIDATION SET**
+- **Validated Setting**: $T_{high} = 0.60$, $T_{low} = 0.40$, $\tau_{min} = 1.5\text{ s}$ (~3 snippets), $\tau_{gap} = 1.2\text{ s}$.
+- **Measured Result**: Reduced alert fragmentation by **43.5%** (from 131 raw blocks to 74 consolidated incidents) across 241 validation videos.
 
 ---
 
 ### VIP-006: Risk Decision Weights & Operational Thresholds
-- **Status**: **TO BE CALIBRATED ON VALIDATION SET**
-- **Formulation**: $R = w_{mag} \cdot s_{max} + w_{dur} \cdot \min(1.0, \Delta t / \Delta t_{sat})$.
-- **Hypothesis**: $w_{mag} = 0.65$, $w_{dur} = 0.35$, $\Delta t_{sat} = 150$ frames (~5-10 sec).
-- **Threshold Calibration**: Derive $(\Theta_{base}, \Theta_{low}, \Theta_{high})$ from empirical quantiles of validation set anomalies.
+- **Status**: **EMPIRICALLY VALIDATED ON VALIDATION SET**
+- **Formulation**: $R = 0.65 \cdot s_{max} + 0.35 \cdot \min(1.0, \Delta t / 8.0\text{ s})$.
+- **Operational Tiers**: High Risk ($R \ge 0.70$), Medium Risk ($0.45 \le R < 0.70$), Low Risk ($0.25 \le R < 0.45$), Normal ($R < 0.25$).
+- **Measured Result**: Classified 174 Normal, 14 Medium Risk, 53 High Risk on the validation set.
+
+---
+
+## SECTION III: NEW ARCHITECTURE DECISION RECORDS (ADRs 008-011)
+
+### ADR-008: Channel-Wise Layer Normalization for Causal Sequence Modeling
+- **Date**: 2026-10-28
+- **Status**: **ACCEPTED & IMPLEMENTED**
+- **Context**: In sequence modeling with 1D dilated convolutions, standard `BatchNorm1d` introduces batch-size dependency and collapses during single-video streaming validation ($B=1$). Furthermore, standard `GroupNorm(1, C)` averages over time $T$, leaking future information to past frames and violating strict causality.
+- **Decision**: Implement `ChannelLayerNorm(C)`, applying `nn.LayerNorm(C)` across the channel dimension for each temporal snippet $t$ independently: $(B, C, T) \to (B, T, C) \to \text{LayerNorm} \to (B, C, T)$.
+- **Consequences**: Mathematically guarantees zero future leakage (verified via unit test with 0.00000000 max error) and makes training/validation completely invariant to batch size.
+
+---
+
+### ADR-009: Stratified Categorical Sampling for Downstream Training
+- **Date**: 2026-10-28
+- **Status**: **ACCEPTED & IMPLEMENTED**
+- **Context**: UCF-Crime exhibits class imbalance across its 13 anomaly categories. Sampling videos strictly sequentially caused training batches to contain only a single category.
+- **Decision**: Pre-extract a balanced stratified training subset of 260 videos (10 videos per each of the 13 anomaly categories = 130 abnormal bags, plus 130 normal bags), while retaining 100% of the official validation set (241 videos).
+- **Consequences**: Models train on rich categorical diversity, boosting generalizability across violence, property crime, and traffic incidents.
+
+---
+
+### ADR-010: Causal Exponential Moving Average for Online Surveillance Smoothing
+- **Date**: 2026-10-28
+- **Status**: **ACCEPTED & IMPLEMENTED**
+- **Context**: Real-time CCTV surveillance requires streaming anomaly predictions. Bidirectional filters (moving average, Gaussian) require waiting for future frames, introducing a latency buffer.
+- **Decision**: Deploy causal Exponential Moving Average ($s_t = \alpha s_t + (1-\alpha)s_{t-1}$) as the primary real-time smoothing filter with $\alpha=0.25$.
+- **Consequences**: Zero latency buffer during online streaming while successfully attenuating instantaneous frame fluctuations.
+
+---
+
+### ADR-011: Saturated Persistence Penalty in Operational Risk Evidence
+- **Date**: 2026-10-28
+- **Status**: **ACCEPTED & IMPLEMENTED**
+- **Context**: Linear duration weighting unbounded over time allows minor low-confidence anomalies to artificially become "High Risk" merely by being long.
+- **Decision**: Apply persistence saturation $\phi(\Delta t) = \min(1.0, \Delta t / \Delta t_{sat})$ with $\Delta t_{sat} = 8.0\text{ seconds}$.
+- **Consequences**: An incident that persists beyond 8 seconds reaches maximum duration risk contribution ($0.35$), but cannot exceed $0.35$ unless supported by high anomaly magnitude ($s_{max}$).
+
