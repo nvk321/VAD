@@ -26,3 +26,6 @@ def load_yaml_config(config_path: str | Path) -> Dict[str, Any]:
         config = yaml.safe_load(f)
 
     return config or {}
+
+
+load_config = load_yaml_config

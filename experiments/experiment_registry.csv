@@ -1,0 +1,7 @@
+Experiment,Backbone,Temporal_Model,Persistence,Risk,Val_AUC,Val_AP,Test_AUC,FPS,VRAM_MB,Status
+smoke_test_mil,S3D (1024-d),None (MIL Baseline),None,None,0.7900,0.8094,TBD,TBD,38.0,MEASURED
+exp_A_mil_baseline,S3D (1024-d),None (MIL Baseline),None,None,0.8253,0.8236,TBD,TBD,43.8,MEASURED
+exp_B_tcn,S3D (1024-d),"Dilated Causal TCN (d=[1,2,4])",None,None,0.8750,0.8705,TBD,TBD,44.1,MEASURED
+exp_C_persistence,S3D (1024-d),"Dilated Causal TCN (d=[1,2,4])",EMA + Hysteresis (43.5% red),None,0.8750,0.8705,TBD,TBD,44.1,MEASURED
+exp_D_risk,S3D (1024-d),"Dilated Causal TCN (d=[1,2,4])",EMA + Hysteresis,"Deterministic (53 High, 14 Med, 0 Low)",0.8750,0.8705,TBD,TBD,44.1,MEASURED
+exp_E_efficiency,S3D (1024-d),"Dilated Causal TCN (d=[1,2,4])",EMA + Hysteresis,Deterministic,0.8750,0.8705,TBD,791.1,1084.5,MEASURED

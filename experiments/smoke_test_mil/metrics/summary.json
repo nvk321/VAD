@@ -1,0 +1,14 @@
+{
+  "experiment": "smoke_test_mil",
+  "dataset": "UCF-Crime",
+  "seed": 42,
+  "model": "MILBaseline_MLP",
+  "feature_dim": 1024,
+  "num_parameters": 557697,
+  "best_epoch": 1,
+  "best_val_roc_auc": 0.79,
+  "best_val_pr_auc": 0.8094,
+  "training_time_seconds": 1.87,
+  "peak_vram_mb": 38.03,
+  "status": "MEASURED"
+}

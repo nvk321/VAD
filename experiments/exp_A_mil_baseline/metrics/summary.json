@@ -1,0 +1,14 @@
+{
+  "experiment": "exp_A_mil_baseline",
+  "dataset": "UCF-Crime",
+  "seed": 42,
+  "model": "MILBaseline_MLP",
+  "feature_dim": 1024,
+  "num_parameters": 557697,
+  "best_epoch": 29,
+  "best_val_roc_auc": 0.8253,
+  "best_val_pr_auc": 0.8236,
+  "training_time_seconds": 56.41,
+  "peak_vram_mb": 43.84,
+  "status": "MEASURED"
+}
