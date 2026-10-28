@@ -1,0 +1,23 @@
+batch_size: 16
+device: cuda
+dilations:
+- 1
+- 2
+- 4
+dropout: 0.2
+epochs: 35
+experiment_id: exp_B_tcn
+feature_dim: 1024
+features_dir: data/features/ucf_crime_s3d
+head_hidden_dim: 64
+kernel_size: 3
+lambda_smooth: 8.0e-05
+lambda_sparse: 8.0e-05
+learning_rate: 0.0002
+margin: 1.0
+patience: 15
+seed: 42
+tcn_hidden_dim: 128
+train_manifest: data/manifests/ucf_crime_train_stratified.csv
+val_manifest: data/manifests/ucf_crime_val.csv
+weight_decay: 0.0005

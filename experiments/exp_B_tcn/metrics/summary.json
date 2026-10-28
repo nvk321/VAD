@@ -1,0 +1,14 @@
+{
+  "experiment": "exp_B_tcn",
+  "dataset": "UCF-Crime",
+  "seed": 42,
+  "model": "TCN_MIL_Model",
+  "feature_dim": 1024,
+  "num_parameters": 453505,
+  "best_epoch": 18,
+  "best_val_roc_auc": 0.875,
+  "best_val_pr_auc": 0.8705,
+  "training_time_seconds": 197.51,
+  "peak_vram_mb": 44.15,
+  "status": "MEASURED"
+}
