@@ -1,0 +1,30 @@
+{
+  "benchmark_timestamp": "2026-10-29 00:58:21",
+  "hardware": {
+    "device": "cuda",
+    "gpu_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "vram_budget_mb": 4096.0,
+    "peak_vram_allocated_mb": 188.48,
+    "vram_utilization_pct": 4.6
+  },
+  "video_input": {
+    "video_file": "data\\demo_samples\\Robbery037.mp4",
+    "total_frames": 400,
+    "total_snippets": 25,
+    "video_duration_sec": 13.33,
+    "native_video_fps": 30.0
+  },
+  "measured_latency_breakdown_per_snippet_ms": {
+    "1_opencv_frame_decode": 4.496,
+    "2_frame_preprocess_resize_norm": 52.434,
+    "3_frozen_s3d_feature_extraction": 50.601,
+    "4_causal_tcn_scoring": 12.616,
+    "5_postprocessing_ema_persistence_risk": 0.1,
+    "total_end_to_end_latency_per_snippet_ms": 130.076
+  },
+  "effective_throughput": {
+    "effective_video_fps": 123.0,
+    "real_time_multiplier": 4.1,
+    "classification": "REAL-TIME READY (>30 FPS)"
+  }
+}
