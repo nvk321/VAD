@@ -1,0 +1,15 @@
+{
+  "experiment": "exp_C_persistence",
+  "dataset": "UCF-Crime Validation (241 videos)",
+  "smoothing": "Exponential Moving Average (alpha=0.25)",
+  "threshold_high": 0.6,
+  "threshold_low": 0.4,
+  "min_persistence_sec": 1.5,
+  "max_gap_sec": 1.2,
+  "total_raw_alert_blocks": 131,
+  "total_raw_chatter_toggles": 193,
+  "total_formed_events": 74,
+  "total_formed_duration_sec": 1955.08,
+  "overall_fragmentation_reduction_pct": 43.5,
+  "status": "MEASURED"
+}
