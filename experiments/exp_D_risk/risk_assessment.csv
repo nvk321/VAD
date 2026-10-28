@@ -1,0 +1,242 @@
+video_id,category,label,risk_level,risk_score,peak_score,duration_sec,persistence_ratio,magnitude_contribution,duration_contribution,explanation
+Abuse010_x264,Abuse,1,Normal,0.2284,0.3513,0.0,0.0,0.2284,0.0,No persistent anomaly events detected. Normal activity.
+Abuse011_x264,Abuse,1,High Risk,0.8996,0.9532,6.4,0.8,0.6196,0.28,"High Risk (R=0.900): Peak anomaly score 0.953 (contributes 0.620), persistent across 6.4s (saturation 80%, contributes 0.280). Immediate operational dispatch recommended."
+Abuse022_x264,Abuse,1,Normal,0.1626,0.2502,0.0,0.0,0.1626,0.0,No persistent anomaly events detected. Normal activity.
+Abuse024_x264,Abuse,1,Normal,0.0097,0.0149,0.0,0.0,0.0097,0.0,No persistent anomaly events detected. Normal activity.
+Abuse025_x264,Abuse,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Abuse032_x264,Abuse,1,High Risk,0.8835,0.9648,5.86,0.7325,0.6271,0.2564,"High Risk (R=0.883): Peak anomaly score 0.965 (contributes 0.627), persistent across 5.9s (saturation 73%, contributes 0.256). Immediate operational dispatch recommended."
+Abuse033_x264,Abuse,1,High Risk,0.8543,0.9556,5.33,0.6663,0.6211,0.2332,"High Risk (R=0.854): Peak anomaly score 0.956 (contributes 0.621), persistent across 5.3s (saturation 67%, contributes 0.233). Immediate operational dispatch recommended."
+Arrest002_x264,Arrest,1,High Risk,0.7913,0.9307,4.26,0.5325,0.605,0.1864,"High Risk (R=0.791): Peak anomaly score 0.931 (contributes 0.605), persistent across 4.3s (saturation 53%, contributes 0.186). Immediate operational dispatch recommended."
+Arrest003_x264,Arrest,1,High Risk,0.8526,0.9529,5.33,0.6663,0.6194,0.2332,"High Risk (R=0.853): Peak anomaly score 0.953 (contributes 0.619), persistent across 5.3s (saturation 67%, contributes 0.233). Immediate operational dispatch recommended."
+Arrest016_x264,Arrest,1,High Risk,0.9733,0.959,15.99,1.0,0.6233,0.35,"High Risk (R=0.973): Peak anomaly score 0.959 (contributes 0.623), persistent across 16.0s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Arrest026_x264,Arrest,1,High Risk,0.9989,0.9983,16.52,1.0,0.6489,0.35,"High Risk (R=0.999): Peak anomaly score 0.998 (contributes 0.649), persistent across 16.5s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Arrest036_x264,Arrest,1,Normal,0.3118,0.4797,0.0,0.0,0.3118,0.0,No persistent anomaly events detected. Normal activity.
+Arrest042_x264,Arrest,1,Normal,0.1454,0.2238,0.0,0.0,0.1454,0.0,No persistent anomaly events detected. Normal activity.
+Arrest049_x264,Arrest,1,High Risk,0.9999,0.9999,36.24,1.0,0.6499,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 36.2s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Arson012_x264,Arson,1,Normal,0.0008,0.0012,0.0,0.0,0.0008,0.0,No persistent anomaly events detected. Normal activity.
+Arson015_x264,Arson,1,High Risk,0.9999,0.9999,22.39,1.0,0.6499,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 22.4s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Arson025_x264,Arson,1,High Risk,0.9999,0.9998,14.92,1.0,0.6499,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 14.9s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Arson032_x264,Arson,1,High Risk,0.9677,0.9867,7.46,0.9325,0.6414,0.3264,"High Risk (R=0.968): Peak anomaly score 0.987 (contributes 0.641), persistent across 7.5s (saturation 93%, contributes 0.326). Immediate operational dispatch recommended."
+Arson037_x264,Arson,1,Normal,0.0004,0.0007,0.0,0.0,0.0004,0.0,No persistent anomaly events detected. Normal activity.
+Arson040_x264,Arson,1,High Risk,0.8555,0.9574,5.33,0.6663,0.6223,0.2332,"High Risk (R=0.855): Peak anomaly score 0.957 (contributes 0.622), persistent across 5.3s (saturation 67%, contributes 0.233). Immediate operational dispatch recommended."
+Assault002_x264,Assault,1,High Risk,0.7716,0.9003,4.26,0.5325,0.5852,0.1864,"High Risk (R=0.772): Peak anomaly score 0.900 (contributes 0.585), persistent across 4.3s (saturation 53%, contributes 0.186). Immediate operational dispatch recommended."
+Assault017_x264,Assault,1,High Risk,0.8878,0.9714,5.86,0.7325,0.6314,0.2564,"High Risk (R=0.888): Peak anomaly score 0.971 (contributes 0.631), persistent across 5.9s (saturation 73%, contributes 0.256). Immediate operational dispatch recommended."
+Assault019_x264,Assault,1,High Risk,0.757,0.9136,3.73,0.4662,0.5938,0.1632,"High Risk (R=0.757): Peak anomaly score 0.914 (contributes 0.594), persistent across 3.7s (saturation 47%, contributes 0.163). Immediate operational dispatch recommended."
+Assault042_x264,Assault,1,High Risk,0.9988,0.9982,27.18,1.0,0.6488,0.35,"High Risk (R=0.999): Peak anomaly score 0.998 (contributes 0.649), persistent across 27.2s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Assault048_x264,Assault,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Assault050_x264,Assault,1,Normal,0.0008,0.0013,0.0,0.0,0.0008,0.0,No persistent anomaly events detected. Normal activity.
+Assault052_x264,Assault,1,Normal,0.0001,0.0002,0.0,0.0,0.0001,0.0,No persistent anomaly events detected. Normal activity.
+Burglary007_x264,Burglary,1,Normal,0.0568,0.0873,0.0,0.0,0.0568,0.0,No persistent anomaly events detected. Normal activity.
+Burglary008_x264,Burglary,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Burglary009_x264,Burglary,1,Normal,0.0782,0.1203,0.0,0.0,0.0782,0.0,No persistent anomaly events detected. Normal activity.
+Burglary011_x264,Burglary,1,High Risk,0.7891,0.9272,4.26,0.5325,0.6027,0.1864,"High Risk (R=0.789): Peak anomaly score 0.927 (contributes 0.603), persistent across 4.3s (saturation 53%, contributes 0.186). Immediate operational dispatch recommended."
+Burglary023_x264,Burglary,1,High Risk,0.9999,0.9998,31.98,1.0,0.6499,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 32.0s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Burglary030_x264,Burglary,1,Normal,0.001,0.0015,0.0,0.0,0.001,0.0,No persistent anomaly events detected. Normal activity.
+Burglary046_x264,Burglary,1,High Risk,0.821,0.94,4.8,0.6,0.611,0.21,"High Risk (R=0.821): Peak anomaly score 0.940 (contributes 0.611), persistent across 4.8s (saturation 60%, contributes 0.210). Immediate operational dispatch recommended."
+Burglary052_x264,Burglary,1,High Risk,0.9971,0.9956,27.18,1.0,0.6471,0.35,"High Risk (R=0.997): Peak anomaly score 0.996 (contributes 0.647), persistent across 27.2s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Burglary053_x264,Burglary,1,High Risk,0.9599,0.9747,7.46,0.9325,0.6336,0.3264,"High Risk (R=0.960): Peak anomaly score 0.975 (contributes 0.634), persistent across 7.5s (saturation 93%, contributes 0.326). Immediate operational dispatch recommended."
+Burglary059_x264,Burglary,1,Normal,0.0001,0.0001,0.0,0.0,0.0001,0.0,No persistent anomaly events detected. Normal activity.
+Burglary060_x264,Burglary,1,Normal,0.1389,0.2136,0.0,0.0,0.1389,0.0,No persistent anomaly events detected. Normal activity.
+Burglary063_x264,Burglary,1,High Risk,0.9747,0.961,8.53,1.0,0.6247,0.35,"High Risk (R=0.975): Peak anomaly score 0.961 (contributes 0.625), persistent across 8.5s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Burglary091_x264,Burglary,1,High Risk,0.8479,0.9457,5.33,0.6663,0.6147,0.2332,"High Risk (R=0.848): Peak anomaly score 0.946 (contributes 0.615), persistent across 5.3s (saturation 67%, contributes 0.233). Immediate operational dispatch recommended."
+Explosion006_x264,Explosion,1,Normal,0.0111,0.0171,0.0,0.0,0.0111,0.0,No persistent anomaly events detected. Normal activity.
+Explosion019_x264,Explosion,1,Normal,0.0001,0.0001,0.0,0.0,0.0001,0.0,No persistent anomaly events detected. Normal activity.
+Explosion041_x264,Explosion,1,High Risk,0.9169,0.9798,6.4,0.8,0.6369,0.28,"High Risk (R=0.917): Peak anomaly score 0.980 (contributes 0.637), persistent across 6.4s (saturation 80%, contributes 0.280). Immediate operational dispatch recommended."
+Explosion044_x264,Explosion,1,Normal,0.1073,0.1651,0.0,0.0,0.1073,0.0,No persistent anomaly events detected. Normal activity.
+Fighting002_x264,Fighting,1,Normal,0.0167,0.0257,0.0,0.0,0.0167,0.0,No persistent anomaly events detected. Normal activity.
+Fighting012_x264,Fighting,1,Normal,0.2721,0.4187,0.0,0.0,0.2721,0.0,No persistent anomaly events detected. Normal activity.
+Fighting019_x264,Fighting,1,Medium Risk,0.5671,0.6571,3.2,0.4,0.4271,0.14,"Medium Risk (R=0.567): Peak anomaly score 0.657 (contributes 0.427), persistent across 3.2s (saturation 40%, contributes 0.140). Operator review and surveillance camera verification needed."
+Fighting027_x264,Fighting,1,Medium Risk,0.5475,0.6989,2.13,0.2662,0.4543,0.0932,"Medium Risk (R=0.547): Peak anomaly score 0.699 (contributes 0.454), persistent across 2.1s (saturation 27%, contributes 0.093). Operator review and surveillance camera verification needed."
+Fighting028_x264,Fighting,1,High Risk,0.711,0.8784,3.2,0.4,0.571,0.14,"High Risk (R=0.711): Peak anomaly score 0.878 (contributes 0.571), persistent across 3.2s (saturation 40%, contributes 0.140). Immediate operational dispatch recommended."
+Fighting034_x264,Fighting,1,Medium Risk,0.5907,0.6934,3.2,0.4,0.4507,0.14,"Medium Risk (R=0.591): Peak anomaly score 0.693 (contributes 0.451), persistent across 3.2s (saturation 40%, contributes 0.140). Operator review and surveillance camera verification needed."
+Fighting046_x264,Fighting,1,Normal,0.2286,0.3517,0.0,0.0,0.2286,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos004_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos007_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos017_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos020_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos026_x264,NormalVideos,0,Normal,0.0016,0.0024,0.0,0.0,0.0016,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos028_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos045_x264,NormalVideos,0,Normal,0.0009,0.0014,0.0,0.0,0.0009,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos047_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos052_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos071_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos072_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos079_x264,NormalVideos,0,Normal,0.0022,0.0033,0.0,0.0,0.0022,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos085_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos089_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos105_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos111_x264,NormalVideos,0,Medium Risk,0.6671,0.7753,3.73,0.4662,0.5039,0.1632,"Medium Risk (R=0.667): Peak anomaly score 0.775 (contributes 0.504), persistent across 3.7s (saturation 47%, contributes 0.163). Operator review and surveillance camera verification needed."
+Normal_Videos112_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos116_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos120_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos124_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos132_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos142_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos146_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos160_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos173_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos176_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos186_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos201_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos202_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos220_x264,NormalVideos,0,Normal,0.0021,0.0032,0.0,0.0,0.0021,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos221_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos226_x264,NormalVideos,0,High Risk,0.8543,0.8836,6.4,0.8,0.5743,0.28,"High Risk (R=0.854): Peak anomaly score 0.884 (contributes 0.574), persistent across 6.4s (saturation 80%, contributes 0.280). Immediate operational dispatch recommended."
+Normal_Videos228_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos244_x264,NormalVideos,0,Normal,0.0005,0.0007,0.0,0.0,0.0005,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos250_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos270_x264,NormalVideos,0,Normal,0.0003,0.0004,0.0,0.0,0.0003,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos273_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos287_x264,NormalVideos,0,Normal,0.0002,0.0003,0.0,0.0,0.0002,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos292_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos296_x264,NormalVideos,0,Normal,0.0003,0.0004,0.0,0.0,0.0003,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos298_x264,NormalVideos,0,Normal,0.013,0.02,0.0,0.0,0.013,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos302_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos303_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos306_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos309_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos330_x264,NormalVideos,0,Normal,0.0792,0.1218,0.0,0.0,0.0792,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos338_x264,NormalVideos,0,Normal,0.0113,0.0175,0.0,0.0,0.0113,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos341_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos348_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos359_x264,NormalVideos,0,Normal,0.001,0.0015,0.0,0.0,0.001,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos366_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos367_x264,NormalVideos,0,Medium Risk,0.5965,0.7743,2.13,0.2662,0.5033,0.0932,"Medium Risk (R=0.596): Peak anomaly score 0.774 (contributes 0.503), persistent across 2.1s (saturation 27%, contributes 0.093). Operator review and surveillance camera verification needed."
+Normal_Videos392_x264,NormalVideos,0,Normal,0.0018,0.0027,0.0,0.0,0.0018,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos402_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos411_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos426_x264,NormalVideos,0,Normal,0.0068,0.0104,0.0,0.0,0.0068,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos433_x264,NormalVideos,0,Normal,0.0,0.0001,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos447_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos451_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos455_x264,NormalVideos,0,Normal,0.0001,0.0002,0.0,0.0,0.0001,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos459_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos466_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos472_x264,NormalVideos,0,High Risk,0.9998,0.9997,489.29,1.0,0.6498,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 489.3s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Normal_Videos475_x264,NormalVideos,0,Normal,0.0001,0.0001,0.0,0.0,0.0001,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos498_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos511_x264,NormalVideos,0,High Risk,1.0,1.0,87.95,1.0,0.65,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 88.0s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Normal_Videos512_x264,NormalVideos,0,Normal,0.0003,0.0004,0.0,0.0,0.0003,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos542_x264,NormalVideos,0,Normal,0.0001,0.0002,0.0,0.0,0.0001,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos554_x264,NormalVideos,0,High Risk,0.963,0.9795,7.46,0.9325,0.6367,0.3264,"High Risk (R=0.963): Peak anomaly score 0.980 (contributes 0.637), persistent across 7.5s (saturation 93%, contributes 0.326). Immediate operational dispatch recommended."
+Normal_Videos556_x264,NormalVideos,0,High Risk,0.9998,0.9997,195.08,1.0,0.6498,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 195.1s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Normal_Videos575_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos588_x264,NormalVideos,0,Normal,0.0,0.0001,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos599_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos601_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos604_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos619_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos620_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos627_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos630_x264,NormalVideos,0,High Risk,0.9995,0.9993,72.49,1.0,0.6495,0.35,"High Risk (R=1.000): Peak anomaly score 0.999 (contributes 0.650), persistent across 72.5s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Normal_Videos646_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos659_x264,NormalVideos,0,Normal,0.0,0.0001,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos661_x264,NormalVideos,0,Normal,0.0002,0.0004,0.0,0.0,0.0002,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos664_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos665_x264,NormalVideos,0,Normal,0.2415,0.3716,0.0,0.0,0.2415,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos666_x264,NormalVideos,0,Normal,0.0,0.0001,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos677_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos684_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos689_x264,NormalVideos,0,Normal,0.0056,0.0086,0.0,0.0,0.0056,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos693_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos706_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos711_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos713_x264,NormalVideos,0,High Risk,0.9998,0.9997,238.25,1.0,0.6498,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 238.2s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Normal_Videos730_x264,NormalVideos,0,Normal,0.0,0.0001,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos736_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos747_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos751_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos756_x264,NormalVideos,0,Normal,0.0001,0.0002,0.0,0.0,0.0001,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos757_x264,NormalVideos,0,Normal,0.0001,0.0001,0.0,0.0,0.0001,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos764_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos766_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos768_x264,NormalVideos,0,Normal,0.0013,0.002,0.0,0.0,0.0013,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos770_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos784_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos793_x264,NormalVideos,0,Medium Risk,0.5808,0.7502,2.13,0.2662,0.4876,0.0932,"Medium Risk (R=0.581): Peak anomaly score 0.750 (contributes 0.488), persistent across 2.1s (saturation 27%, contributes 0.093). Operator review and surveillance camera verification needed."
+Normal_Videos803_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos807_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos814_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos821_x264,NormalVideos,0,Normal,0.0,0.0001,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos829_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos837_x264,NormalVideos,0,High Risk,0.9967,0.9949,10.13,1.0,0.6467,0.35,"High Risk (R=0.997): Peak anomaly score 0.995 (contributes 0.647), persistent across 10.1s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Normal_Videos844_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos850_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos851_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos854_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos857_x264,NormalVideos,0,Normal,0.0002,0.0003,0.0,0.0,0.0002,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos858_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos917_x264,NormalVideos,0,Normal,0.0051,0.0079,0.0,0.0,0.0051,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos919_x264,NormalVideos,0,Normal,0.0057,0.0087,0.0,0.0,0.0057,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos945_x264,NormalVideos,0,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Normal_Videos947_x264,NormalVideos,0,Normal,0.0329,0.0507,0.0,0.0,0.0329,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents006_x264,RoadAccidents,1,Medium Risk,0.5097,0.6765,1.6,0.2,0.4397,0.07,"Medium Risk (R=0.510): Peak anomaly score 0.676 (contributes 0.440), persistent across 1.6s (saturation 20%, contributes 0.070). Operator review and surveillance camera verification needed."
+RoadAccidents027_x264,RoadAccidents,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents028_x264,RoadAccidents,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents031_x264,RoadAccidents,1,Normal,0.0051,0.0079,0.0,0.0,0.0051,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents034_x264,RoadAccidents,1,Normal,0.0056,0.0086,0.0,0.0,0.0056,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents040_x264,RoadAccidents,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents050_x264,RoadAccidents,1,Normal,0.4131,0.6355,0.0,0.0,0.4131,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents054_x264,RoadAccidents,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents068_x264,RoadAccidents,1,Normal,0.2118,0.3259,0.0,0.0,0.2118,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents081_x264,RoadAccidents,1,Normal,0.0003,0.0004,0.0,0.0,0.0003,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents092_x264,RoadAccidents,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents104_x264,RoadAccidents,1,High Risk,0.9999,0.9999,17.06,1.0,0.6499,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 17.1s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+RoadAccidents109_x264,RoadAccidents,1,High Risk,0.999,0.9985,11.73,1.0,0.649,0.35,"High Risk (R=0.999): Peak anomaly score 0.999 (contributes 0.649), persistent across 11.7s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+RoadAccidents113_x264,RoadAccidents,1,High Risk,0.7159,0.886,3.2,0.4,0.5759,0.14,"High Risk (R=0.716): Peak anomaly score 0.886 (contributes 0.576), persistent across 3.2s (saturation 40%, contributes 0.140). Immediate operational dispatch recommended."
+RoadAccidents114_x264,RoadAccidents,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents117_x264,RoadAccidents,1,Normal,0.0001,0.0001,0.0,0.0,0.0001,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents126_x264,RoadAccidents,1,Normal,0.0005,0.0007,0.0,0.0,0.0005,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents142_x264,RoadAccidents,1,Normal,0.0003,0.0005,0.0,0.0,0.0003,0.0,No persistent anomaly events detected. Normal activity.
+RoadAccidents147_x264,RoadAccidents,1,High Risk,1.0,1.0,33.05,1.0,0.65,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 33.0s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Robbery001_x264,Robbery,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Robbery011_x264,Robbery,1,Normal,0.0376,0.0578,0.0,0.0,0.0376,0.0,No persistent anomaly events detected. Normal activity.
+Robbery017_x264,Robbery,1,High Risk,0.9981,0.9971,11.19,1.0,0.6481,0.35,"High Risk (R=0.998): Peak anomaly score 0.997 (contributes 0.648), persistent across 11.2s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Robbery021_x264,Robbery,1,High Risk,0.9964,0.9945,22.92,1.0,0.6464,0.35,"High Risk (R=0.996): Peak anomaly score 0.995 (contributes 0.646), persistent across 22.9s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Robbery028_x264,Robbery,1,Normal,0.3258,0.5013,0.0,0.0,0.3258,0.0,No persistent anomaly events detected. Normal activity.
+Robbery033_x264,Robbery,1,Normal,0.001,0.0016,0.0,0.0,0.001,0.0,No persistent anomaly events detected. Normal activity.
+Robbery036_x264,Robbery,1,High Risk,0.9964,0.9945,9.06,1.0,0.6464,0.35,"High Risk (R=0.996): Peak anomaly score 0.995 (contributes 0.646), persistent across 9.1s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Robbery037_x264,Robbery,1,Medium Risk,0.6748,0.7514,4.26,0.5325,0.4884,0.1864,"Medium Risk (R=0.675): Peak anomaly score 0.751 (contributes 0.488), persistent across 4.3s (saturation 53%, contributes 0.186). Operator review and surveillance camera verification needed."
+Robbery046_x264,Robbery,1,Normal,0.002,0.0031,0.0,0.0,0.002,0.0,No persistent anomaly events detected. Normal activity.
+Robbery057_x264,Robbery,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Robbery067_x264,Robbery,1,High Risk,0.7058,0.7991,4.26,0.5325,0.5194,0.1864,"High Risk (R=0.706): Peak anomaly score 0.799 (contributes 0.519), persistent across 4.3s (saturation 53%, contributes 0.186). Immediate operational dispatch recommended."
+Robbery073_x264,Robbery,1,Normal,0.0099,0.0153,0.0,0.0,0.0099,0.0,No persistent anomaly events detected. Normal activity.
+Robbery076_x264,Robbery,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Robbery087_x264,Robbery,1,Normal,0.0002,0.0003,0.0,0.0,0.0002,0.0,No persistent anomaly events detected. Normal activity.
+Robbery088_x264,Robbery,1,High Risk,0.9975,0.9962,10.13,1.0,0.6475,0.35,"High Risk (R=0.998): Peak anomaly score 0.996 (contributes 0.648), persistent across 10.1s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Robbery092_x264,Robbery,1,Normal,0.0005,0.0007,0.0,0.0,0.0005,0.0,No persistent anomaly events detected. Normal activity.
+Robbery104_x264,Robbery,1,Medium Risk,0.5976,0.776,2.13,0.2662,0.5044,0.0932,"Medium Risk (R=0.598): Peak anomaly score 0.776 (contributes 0.504), persistent across 2.1s (saturation 27%, contributes 0.093). Operator review and surveillance camera verification needed."
+Robbery117_x264,Robbery,1,High Risk,0.9298,0.892,8.0,1.0,0.5798,0.35,"High Risk (R=0.930): Peak anomaly score 0.892 (contributes 0.580), persistent across 8.0s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Robbery126_x264,Robbery,1,Normal,0.0031,0.0048,0.0,0.0,0.0031,0.0,No persistent anomaly events detected. Normal activity.
+Robbery130_x264,Robbery,1,Medium Risk,0.6946,0.8532,3.2,0.4,0.5546,0.14,"Medium Risk (R=0.695): Peak anomaly score 0.853 (contributes 0.555), persistent across 3.2s (saturation 40%, contributes 0.140). Operator review and surveillance camera verification needed."
+Robbery135_x264,Robbery,1,Normal,0.3483,0.5358,0.0,0.0,0.3483,0.0,No persistent anomaly events detected. Normal activity.
+Robbery139_x264,Robbery,1,Normal,0.0456,0.0702,0.0,0.0,0.0456,0.0,No persistent anomaly events detected. Normal activity.
+Shooting014_x264,Shooting,1,High Risk,0.9544,0.9299,18.66,1.0,0.6044,0.35,"High Risk (R=0.954): Peak anomaly score 0.930 (contributes 0.604), persistent across 18.7s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Shooting029_x264,Shooting,1,Normal,0.4009,0.6168,0.0,0.0,0.4009,0.0,No persistent anomaly events detected. Normal activity.
+Shooting039_x264,Shooting,1,Normal,0.0064,0.0098,0.0,0.0,0.0064,0.0,No persistent anomaly events detected. Normal activity.
+Shooting040_x264,Shooting,1,Normal,0.2649,0.4075,0.0,0.0,0.2649,0.0,No persistent anomaly events detected. Normal activity.
+Shoplifting003_x264,Shoplifting,1,High Risk,0.9998,0.9997,31.45,1.0,0.6498,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 31.4s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Shoplifting006_x264,Shoplifting,1,High Risk,0.7955,0.9008,4.8,0.6,0.5855,0.21,"High Risk (R=0.796): Peak anomaly score 0.901 (contributes 0.586), persistent across 4.8s (saturation 60%, contributes 0.210). Immediate operational dispatch recommended."
+Shoplifting030_x264,Shoplifting,1,Normal,0.0156,0.024,0.0,0.0,0.0156,0.0,No persistent anomaly events detected. Normal activity.
+Shoplifting041_x264,Shoplifting,1,Normal,0.0278,0.0428,0.0,0.0,0.0278,0.0,No persistent anomaly events detected. Normal activity.
+Stealing029_x264,Stealing,1,Normal,0.0001,0.0001,0.0,0.0,0.0001,0.0,No persistent anomaly events detected. Normal activity.
+Stealing030_x264,Stealing,1,Normal,0.353,0.5432,0.0,0.0,0.353,0.0,No persistent anomaly events detected. Normal activity.
+Stealing032_x264,Stealing,1,Normal,0.0393,0.0604,0.0,0.0,0.0393,0.0,No persistent anomaly events detected. Normal activity.
+Stealing042_x264,Stealing,1,Normal,0.0013,0.002,0.0,0.0,0.0013,0.0,No persistent anomaly events detected. Normal activity.
+Stealing057_x264,Stealing,1,High Risk,0.9143,0.9759,6.4,0.8,0.6343,0.28,"High Risk (R=0.914): Peak anomaly score 0.976 (contributes 0.634), persistent across 6.4s (saturation 80%, contributes 0.280). Immediate operational dispatch recommended."
+Stealing074_x264,Stealing,1,High Risk,0.9174,0.9806,6.4,0.8,0.6374,0.28,"High Risk (R=0.917): Peak anomaly score 0.981 (contributes 0.637), persistent across 6.4s (saturation 80%, contributes 0.280). Immediate operational dispatch recommended."
+Stealing080_x264,Stealing,1,Normal,0.0343,0.0527,0.0,0.0,0.0343,0.0,No persistent anomaly events detected. Normal activity.
+Stealing081_x264,Stealing,1,Medium Risk,0.5977,0.7761,2.13,0.2662,0.5045,0.0932,"Medium Risk (R=0.598): Peak anomaly score 0.776 (contributes 0.504), persistent across 2.1s (saturation 27%, contributes 0.093). Operator review and surveillance camera verification needed."
+Stealing084_x264,Stealing,1,High Risk,1.0,1.0,51.17,1.0,0.65,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 51.2s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Stealing086_x264,Stealing,1,High Risk,0.9999,0.9999,58.63,1.0,0.6499,0.35,"High Risk (R=1.000): Peak anomaly score 1.000 (contributes 0.650), persistent across 58.6s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Stealing098_x264,Stealing,1,High Risk,0.9934,0.9898,8.53,1.0,0.6434,0.35,"High Risk (R=0.993): Peak anomaly score 0.990 (contributes 0.643), persistent across 8.5s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Stealing108_x264,Stealing,1,High Risk,0.9666,0.985,7.46,0.9325,0.6402,0.3264,"High Risk (R=0.967): Peak anomaly score 0.985 (contributes 0.640), persistent across 7.5s (saturation 93%, contributes 0.326). Immediate operational dispatch recommended."
+Stealing109_x264,Stealing,1,Medium Risk,0.6987,0.8596,3.2,0.4,0.5587,0.14,"Medium Risk (R=0.699): Peak anomaly score 0.860 (contributes 0.559), persistent across 3.2s (saturation 40%, contributes 0.140). Operator review and surveillance camera verification needed."
+Stealing113_x264,Stealing,1,Medium Risk,0.5373,0.719,1.6,0.2,0.4673,0.07,"Medium Risk (R=0.537): Peak anomaly score 0.719 (contributes 0.467), persistent across 1.6s (saturation 20%, contributes 0.070). Operator review and surveillance camera verification needed."
+Vandalism008_x264,Vandalism,1,High Risk,0.8853,0.8236,8.0,1.0,0.5353,0.35,"High Risk (R=0.885): Peak anomaly score 0.824 (contributes 0.535), persistent across 8.0s (saturation 100%, contributes 0.350). Immediate operational dispatch recommended."
+Vandalism010_x264,Vandalism,1,Normal,0.0001,0.0001,0.0,0.0,0.0001,0.0,No persistent anomaly events detected. Normal activity.
+Vandalism024_x264,Vandalism,1,Normal,0.055,0.0846,0.0,0.0,0.055,0.0,No persistent anomaly events detected. Normal activity.
+Vandalism027_x264,Vandalism,1,Normal,0.0001,0.0002,0.0,0.0,0.0001,0.0,No persistent anomaly events detected. Normal activity.
+Vandalism029_x264,Vandalism,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.
+Vandalism035_x264,Vandalism,1,Medium Risk,0.6095,0.7943,2.13,0.2662,0.5163,0.0932,"Medium Risk (R=0.609): Peak anomaly score 0.794 (contributes 0.516), persistent across 2.1s (saturation 27%, contributes 0.093). Operator review and surveillance camera verification needed."
+Vandalism040_x264,Vandalism,1,Normal,0.0,0.0,0.0,0.0,0.0,0.0,No persistent anomaly events detected. Normal activity.

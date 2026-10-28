@@ -1,0 +1,17 @@
+{
+  "experiment": "exp_D_risk",
+  "dataset": "UCF-Crime Validation (241 videos)",
+  "weight_magnitude": 0.65,
+  "weight_duration": 0.35,
+  "duration_saturation_sec": 8.0,
+  "theta_high": 0.7,
+  "theta_low": 0.45,
+  "theta_base": 0.25,
+  "tier_distribution": {
+    "Normal": 174,
+    "Low Risk": 0,
+    "Medium Risk": 14,
+    "High Risk": 53
+  },
+  "status": "MEASURED"
+}
