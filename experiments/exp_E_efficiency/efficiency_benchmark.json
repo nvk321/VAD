@@ -1,0 +1,30 @@
+{
+  "hardware": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "cuda_version": "12.4",
+  "pytorch_version": "2.6.0+cu124",
+  "s3d_backbone_latency_ms": 17.45,
+  "mil_baseline": {
+    "parameters": 557697,
+    "sequence_latency_ms": 0.344,
+    "snippet_latency_ms": 0.0108,
+    "streaming_single_snippet_ms": 0.393,
+    "throughput_snippets_sec": 93023.1,
+    "effective_fps": 1488369.2,
+    "peak_vram_mb": 13.18
+  },
+  "tcn_mil": {
+    "parameters": 453505,
+    "sequence_latency_ms": 2.932,
+    "snippet_latency_ms": 0.0916,
+    "streaming_single_snippet_ms": 2.7758,
+    "throughput_snippets_sec": 10914.2,
+    "effective_fps": 174627.9,
+    "peak_vram_mb": 13.15
+  },
+  "end_to_end": {
+    "s3d_plus_tcn_snippet_latency_ms": 20.23,
+    "effective_video_fps": 791.1,
+    "decision_layer_overhead_ms_per_100_snippets": 0.132,
+    "status": "MEASURED"
+  }
+}

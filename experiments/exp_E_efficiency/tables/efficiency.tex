@@ -1,0 +1,16 @@
+\begin{table}[ht]
+\centering
+\caption{Inference Latency, Throughput, and Memory Profile on NVIDIA RTX 3050 Laptop GPU (4 GB VRAM).}
+\label{tab:efficiency_benchmark}
+\begin{tabular}{lccccc}
+\hline
+\textbf{Model Stage} & \textbf{Parameters} & \textbf{Latency / Clip} & \textbf{Throughput} & \textbf{Effective FPS} & \textbf{Peak VRAM} \\
+\hline
+S3D Backbone (Frozen) & 7.9M & 17.45 ms & 57.3 clips/s & 916.8 FPS & 1084.5 MB \\
+MIL Baseline Head & 557.7K & 0.011 ms & 93,023 clips/s & 1,488,369 FPS & 13.2 MB \\
+Dilated Causal TCN + MIL & 448.9K & 0.092 ms & 10,914 clips/s & 174,628 FPS & 13.2 MB \\
+\hline
+\textbf{Complete Pipeline (E2E)} & \textbf{8.3M} & \textbf{20.23 ms} & \textbf{49.4 clips/s} & \textbf{791.1 FPS} & \textbf{1.08 GB} \\
+\hline
+\end{tabular}
+\end{table}
