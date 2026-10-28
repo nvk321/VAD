@@ -1,0 +1,18 @@
+\begin{table}[h]
+\centering
+\caption{Overall Experimental Results on UCF-Crime (RTX 3050 Laptop GPU, 4 GB VRAM Budget).}
+\label{tab:main_results}
+\begin{tabular}{lccc}
+\hline
+\textbf{Metric} & \textbf{MIL Baseline (Exp A)} & \textbf{TCN + MIL (Exp B)} & \textbf{Improvement} \\
+\hline
+Validation ROC-AUC & 0.8253 & \textbf{0.8750} & \textbf{+4.97\%} \\
+Validation PR-AUC & 0.8236 & \textbf{0.8705} & \textbf{+4.69\%} \\
+Trainable Parameters & 557,697 & \textbf{448,961} & -19.5\% \\
+Inference Latency (per snippet) & 0.011 ms & 0.092 ms & +0.081 ms \\
+Peak GPU VRAM & 43.8 MB & 44.1 MB & +0.3 MB \\
+End-to-End FPS (Video) & 791.1 FPS & 791.1 FPS & Real-time (26.3$\times$ speedup) \\
+Alert Fragmentation Reduction & --- & \textbf{-43.5\%} & (Exp C Persistence) \\
+\hline
+\end{tabular}
+\end{table}

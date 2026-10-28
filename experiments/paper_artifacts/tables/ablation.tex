@@ -1,0 +1,16 @@
+\begin{table*}[t]
+\centering
+\caption{Systematic Component Ablation & Performance Progression on UCF-Crime Validation Set (241 Videos).}
+\label{tab:system_ablation}
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Pipeline Configuration} & \textbf{ROC-AUC} & \textbf{PR-AUC (AP)} & \textbf{Gain ($\Delta$AUC)} & \textbf{Alert Fragmentation} & \textbf{FPS} & \textbf{VRAM} \\
+\hline
+(A) Frozen S3D + MIL Baseline & 0.8253 & 0.8236 & --- & 131 fragmented blocks & 93,023* & 43.8 MB \\
+(B) Frozen S3D + Causal TCN + MIL & 0.8750 & 0.8705 & +4.97\% & 131 fragmented blocks & 10,914* & 44.1 MB \\
+(C) (B) + Temporal Persistence ($\tau_{min}=1.5s$) & 0.8750 & 0.8705 & --- & \textbf{74 consolidated events (-43.5\%)} & 791.1** & 44.1 MB \\
+(D) (C) + Deterministic Risk Decision Layer & 0.8750 & 0.8705 & --- & 53 High / 14 Med / 0 Low & 791.1** & 44.1 MB \\
+\hline
+\multicolumn{7}{l}{\footnotesize *Downstream sequence throughput without 3D feature decoding. **Full end-to-end pipeline including S3D feature extraction.}
+\end{tabular}
+\end{table*}
