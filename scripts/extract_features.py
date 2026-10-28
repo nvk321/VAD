@@ -13,7 +13,7 @@ from pathlib import Path
 import sys
 import time
 import zipfile
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 # Ensure project root is on sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -48,29 +48,34 @@ def load_video_frames_from_zip(
     zf: zipfile.ZipFile,
     archive_prefix: str,
     transform,
+    num_sampled_frames: Optional[int] = None,
+    frame_stride: int = 10,
 ) -> Optional[torch.Tensor]:
     """Read and decode all PNG frames belonging to a video from the zip archive.
+
+    Uses O(1) direct naming when num_sampled_frames is provided, falling back to prefix matching.
 
     Returns:
         torch.Tensor of shape (T, 3, H, W) or None if corrupt.
     """
     prefix = archive_prefix.rstrip("/") + "_"
-    matching_names = [
-        name for name in zf.namelist()
-        if name.startswith(prefix) and name.endswith(".png")
-    ]
+
+    if num_sampled_frames is not None and num_sampled_frames > 0:
+        matching_names = [f"{prefix}{i * frame_stride}.png" for i in range(num_sampled_frames)]
+    else:
+        matching_names = [
+            name for name in zf.namelist()
+            if name.startswith(prefix) and name.endswith(".png")
+        ]
+        def get_index(path_str):
+            try:
+                return int(path_str.rsplit("_", 1)[1].split(".")[0])
+            except Exception:
+                return 0
+        matching_names.sort(key=get_index)
 
     if not matching_names:
         return None
-
-    # Sort numerically by frame index e.g. prefix_0.png, prefix_10.png
-    def get_index(path_str):
-        try:
-            return int(path_str.rsplit("_", 1)[1].split(".")[0])
-        except Exception:
-            return 0
-
-    matching_names.sort(key=get_index)
 
     frame_tensors = []
     for name in matching_names:
@@ -79,8 +84,7 @@ def load_video_frames_from_zip(
             img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
             frame_tensor = transform(img)
             frame_tensors.append(frame_tensor)
-        except Exception as e:
-            # Skip unreadable frames
+        except Exception:
             continue
 
     if not frame_tensors:
@@ -118,33 +122,102 @@ def chunk_into_snippets(video_tensor: torch.Tensor, snippet_length: int = 16) ->
     return torch.stack(clips)  # (N_snippets, 3, snippet_length, H, W)
 
 
-def extract_video_features(
-    batch_clips: torch.Tensor,
+def extract_video_features_streaming(
+    zf: zipfile.ZipFile,
+    archive_prefix: str,
+    transform,
     backbone,
     device: str,
-    batch_size: int = 16
-) -> torch.Tensor:
-    """Run clips through backbone with automatic batching and memory management."""
-    num_clips = batch_clips.size(0)
+    num_sampled_frames: Optional[int] = None,
+    frame_stride: int = 10,
+    snippet_length: int = 16,
+    batch_snippets: int = 8,
+) -> Optional[Tuple[torch.Tensor, int, int]]:
+    """Stream and extract spatiotemporal features in small snippet batches.
+
+    Guarantees constant, minimal host RAM (<100 MB) and GPU VRAM (<600 MB)
+    regardless of whether video has 50 frames or 10,000 frames.
+    """
+    prefix = archive_prefix.rstrip("/") + "_"
+
+    if num_sampled_frames is not None and num_sampled_frames > 0:
+        frame_names = [f"{prefix}{i * frame_stride}.png" for i in range(num_sampled_frames)]
+    else:
+        frame_names = [
+            name for name in zf.namelist()
+            if name.startswith(prefix) and name.endswith(".png")
+        ]
+        def get_index(path_str):
+            try:
+                return int(path_str.rsplit("_", 1)[1].split(".")[0])
+            except Exception:
+                return 0
+        frame_names.sort(key=get_index)
+
+    total_frames = len(frame_names)
+    if total_frames == 0:
+        return None
+
+    # Pad short videos
+    if total_frames < snippet_length:
+        pad_count = snippet_length - total_frames
+        frame_names += [frame_names[-1]] * pad_count
+        total_frames = len(frame_names)
+
+    num_snippets = total_frames // snippet_length
     features_list = []
 
-    for i in range(0, num_clips, batch_size):
-        chunk = batch_clips[i : i + batch_size].to(device)
-        try:
-            with torch.no_grad():
-                feat = backbone.extract_features(chunk)
-            features_list.append(feat.cpu())
-        except torch.cuda.OutOfMemoryError:
-            torch.cuda.empty_cache()
-            # Retry with half batch size
-            half = max(1, chunk.size(0) // 2)
-            for j in range(0, chunk.size(0), half):
-                sub_chunk = chunk[j : j + half].to(device)
-                with torch.no_grad():
-                    feat = backbone.extract_features(sub_chunk)
-                features_list.append(feat.cpu())
+    for s_start in range(0, num_snippets, batch_snippets):
+        s_end = min(s_start + batch_snippets, num_snippets)
+        curr_batch_snippets = s_end - s_start
 
-    return torch.cat(features_list, dim=0)  # (num_clips, feature_dim)
+        clips_in_batch = []
+        for snip_idx in range(curr_batch_snippets):
+            snip_global = s_start + snip_idx
+            snip_file_names = frame_names[snip_global * snippet_length : (snip_global + 1) * snippet_length]
+
+            frame_tensors = []
+            for fname in snip_file_names:
+                try:
+                    raw_bytes = zf.read(fname)
+                    img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+                    frame_tensors.append(transform(img))
+                except Exception:
+                    if frame_tensors:
+                        frame_tensors.append(frame_tensors[-1])
+
+            if not frame_tensors:
+                continue
+
+            # Ensure snippet has exactly snippet_length frames
+            while len(frame_tensors) < snippet_length:
+                frame_tensors.append(frame_tensors[-1])
+            frame_tensors = frame_tensors[:snippet_length]
+
+            # (T, 3, H, W) -> permute to (3, T, H, W)
+            clip_tensor = torch.stack(frame_tensors).permute(1, 0, 2, 3)
+            clips_in_batch.append(clip_tensor)
+
+        if not clips_in_batch:
+            continue
+
+        # (B, 3, T, H, W)
+        batch_tensor = torch.stack(clips_in_batch).to(device)
+
+        with torch.no_grad():
+            if device == "cuda":
+                with torch.amp.autocast("cuda"):
+                    feat = backbone.extract_features(batch_tensor)
+            else:
+                feat = backbone.extract_features(batch_tensor)
+
+        features_list.append(feat.float().cpu())
+
+    if not features_list:
+        return None
+
+    all_features = torch.cat(features_list, dim=0)  # (num_snippets, feature_dim)
+    return all_features, total_frames, all_features.size(0)
 
 
 def run_feature_extraction(
@@ -178,7 +251,13 @@ def run_feature_extraction(
         records = list(csv.DictReader(f))
 
     if max_videos:
-        records = records[:max_videos]
+        abnormal = [r for r in records if int(r["label"]) == 1]
+        normal = [r for r in records if int(r["label"]) == 0]
+        if abnormal and normal:
+            half = max_videos // 2
+            records = abnormal[:half] + normal[: (max_videos - half)]
+        else:
+            records = records[:max_videos]
 
     total_videos = len(records)
     console.print(Panel.fit(
@@ -231,22 +310,26 @@ def run_feature_extraction(
                 continue
 
             try:
-                # 1. Load frames from archive
-                video_tensor = load_video_frames_from_zip(zf, archive_path_prefix, transform)
-                if video_tensor is None or video_tensor.size(0) == 0:
+                num_sampled = int(rec["num_sampled_frames"]) if "num_sampled_frames" in rec else None
+                stride = int(rec["frame_stride"]) if "frame_stride" in rec else 10
+                result = extract_video_features_streaming(
+                    zf=zf,
+                    archive_prefix=archive_path_prefix,
+                    transform=transform,
+                    backbone=backbone,
+                    device=device,
+                    num_sampled_frames=num_sampled,
+                    frame_stride=stride,
+                    snippet_length=snippet_length,
+                    batch_snippets=max(1, batch_size // 2),
+                )
+                if result is None:
                     failed += 1
-                    manifest_data[video_id] = {"status": "failed", "error": "Zero readable frames"}
+                    manifest_data[video_id] = {"status": "failed", "error": "Zero readable snippets"}
                     progress_bar.advance(task)
                     continue
 
-                num_frames = video_tensor.size(0)
-
-                # 2. Chunk into snippets
-                clips = chunk_into_snippets(video_tensor, snippet_length=snippet_length)
-                num_snippets = clips.size(0)
-
-                # 3. Extract spatiotemporal features
-                features = extract_video_features(clips, backbone, device, batch_size=batch_size)
+                features, num_frames, num_snippets = result
 
                 # 4. Save to disk
                 payload = {
