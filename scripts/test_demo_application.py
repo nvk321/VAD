@@ -109,15 +109,19 @@ def run_demo_qa_suite() -> bool:
 
         final_step = robbery_outputs[-1]
         status_html = final_step[0]
-        events_df = final_step[2]
-        telemetry = final_step[3]
-        annotated_video = final_step[5]
-        clean_video = final_step[6]
-        scores_csv = final_step[7]
-        incidents_csv = final_step[8]
-        plot_png = final_step[9]
-        summary_json = final_step[10]
-        run_manifest = final_step[11]
+        live_hud = final_step[1]
+        fig = final_step[2]
+        peak_frame = final_step[3]
+        events_df = final_step[4]
+        telemetry = final_step[5]
+        playback_video = final_step[6]
+        annotated_video = final_step[7]
+        clean_video = final_step[8]
+        scores_csv = final_step[9]
+        incidents_csv = final_step[10]
+        plot_png = final_step[11]
+        summary_json = final_step[12]
+        run_manifest = final_step[13]
 
         # Verify artifacts on disk
         artifacts_exist = all(
@@ -137,6 +141,8 @@ def run_demo_qa_suite() -> bool:
             and risk_level == "High Risk"
             and num_events >= 1
             and artifacts_exist
+            and live_hud is not None
+            and peak_frame is not None
         )
 
         # Verify video is valid H.264
@@ -146,7 +152,7 @@ def run_demo_qa_suite() -> bool:
         log_test(
             "Test 4: Robbery037 Detection & High Risk Triage",
             robbery_valid,
-            f"Peak: {peak_score:.4f} | Risk: {risk_level} | Events: {num_events} | Duration: {v_dur:.1f}s | H.264 Playable: {is_h264_valid}",
+            f"Peak: {peak_score:.4f} | Risk: {risk_level} | Events: {num_events} | Duration: {v_dur:.1f}s | Live HUD Frame: {live_hud is not None} | Peak Frame: {peak_frame is not None}",
         )
     except Exception as e:
         log_test("Test 4: Robbery037 Detection & High Risk Triage", False, f"Exception: {e}")
@@ -166,7 +172,7 @@ def run_demo_qa_suite() -> bool:
             normal_outputs.append(step)
 
         final_step = normal_outputs[-1]
-        summary_json = final_step[10]
+        summary_json = final_step[12]
 
         with open(summary_json, "r", encoding="utf-8") as f:
             normal_summary = json.load(f)
@@ -192,8 +198,8 @@ def run_demo_qa_suite() -> bool:
     # TEST 6: Multi-Run Directory Isolation
     # -------------------------------------------------------------------------
     try:
-        robbery_run_dir = Path(robbery_outputs[-1][11]).parent
-        normal_run_dir = Path(normal_outputs[-1][11]).parent
+        robbery_run_dir = Path(robbery_outputs[-1][13]).parent
+        normal_run_dir = Path(normal_outputs[-1][13]).parent
         is_isolated = (
             robbery_run_dir != normal_run_dir
             and robbery_run_dir.is_dir()
@@ -221,7 +227,7 @@ def run_demo_qa_suite() -> bool:
         for i, step in enumerate(gen):
             if i == 3:  # Cancel after snippet 3
                 engine.cancel()
-            if step[3] and "CANCELLED" in step[3]:
+            if step[5] and "CANCELLED" in step[5]:
                 cancel_success = True
                 break
 

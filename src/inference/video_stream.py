@@ -21,6 +21,7 @@ from PIL import Image
 import torch
 from torchvision import transforms
 
+from src.inference.annotated_video import annotate_frame
 from src.models.backbone import build_backbone
 from src.models.tcn import TCNModel
 from src.postprocessing.event_formation import AnomalyEvent, EventFormationEngine
@@ -50,6 +51,8 @@ class StreamUpdate:
     total_frames: int = 0
     is_complete: bool = False
     status_banner: str = "NORMAL"
+    current_annotated_frame_rgb: Optional[np.ndarray] = None
+    peak_incident_frame_rgb: Optional[np.ndarray] = None
 
 
 _GLOBAL_STREAM_ENGINE: Optional["VideoStreamInference"] = None
@@ -237,6 +240,9 @@ class VideoStreamInference:
         frames_processed = 0
         snippet_idx = 0
         overall_start_time = time.perf_counter()
+        latest_annotated_rgb: Optional[np.ndarray] = None
+        peak_incident_frame_rgb: Optional[np.ndarray] = None
+        highest_recorded_score: float = -1.0
 
         logger.info(
             f"Starting streaming inference: {video_file.name} | "
@@ -302,6 +308,29 @@ class VideoStreamInference:
                     elapsed_total = time.perf_counter() - overall_start_time
                     processing_fps = frames_processed / max(0.001, elapsed_total)
 
+                    # Determine active incident at current timestamp if any
+                    active_event_now = None
+                    for ev in active_events:
+                        if ev.start_sec <= current_timestamp <= ev.end_sec:
+                            active_event_now = ev
+                            break
+
+                    # Render live operational HUD on current frame
+                    annotated_bgr = annotate_frame(
+                        frame_bgr=frame_bgr,
+                        raw_score=raw_score,
+                        smooth_score=smooth_score,
+                        risk_assessment=current_risk,
+                        timestamp_sec=current_timestamp,
+                        active_event=active_event_now,
+                    )
+                    latest_annotated_rgb = cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
+
+                    # Update peak incident visual evidence
+                    if smooth_score > highest_recorded_score:
+                        highest_recorded_score = smooth_score
+                        peak_incident_frame_rgb = latest_annotated_rgb.copy()
+
                     # Status Banner
                     if current_risk.risk_level == "High Risk":
                         status_banner = "HIGH RISK ANOMALY"
@@ -330,6 +359,8 @@ class VideoStreamInference:
                         total_frames=total_frames,
                         is_complete=False,
                         status_banner=status_banner,
+                        current_annotated_frame_rgb=latest_annotated_rgb,
+                        peak_incident_frame_rgb=peak_incident_frame_rgb,
                     )
 
                     snippet_idx += 1
@@ -414,6 +445,8 @@ class VideoStreamInference:
                 total_frames=total_frames,
                 is_complete=True,
                 status_banner="CANCELLED",
+                current_annotated_frame_rgb=latest_annotated_rgb,
+                peak_incident_frame_rgb=peak_incident_frame_rgb,
             )
         elif len(raw_scores_history) > 0:
             final_peak = max(smooth_scores_history) if smooth_scores_history else 0.0
@@ -441,5 +474,7 @@ class VideoStreamInference:
                 total_frames=total_frames,
                 is_complete=True,
                 status_banner=status_banner,
+                current_annotated_frame_rgb=latest_annotated_rgb,
+                peak_incident_frame_rgb=peak_incident_frame_rgb,
             )
 
