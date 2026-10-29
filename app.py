@@ -148,28 +148,30 @@ def render_live_plot(
     """Draw dynamic timeline plot that grows progressively as video is processed."""
     plt.close("all")
     fig, ax = plt.subplots(figsize=(10, 4.2), dpi=180)
+    fig.patch.set_facecolor("#14171f")
+    ax.set_facecolor("#1e222d")
 
     t_arr = np.array(timestamps) if timestamps else np.array([0.0])
     raw_arr = np.array(raw_scores) if raw_scores else np.array([0.0])
     smooth_arr = np.array(smooth_scores) if smooth_scores else np.array([0.0])
 
     # Plot anomaly curves
-    ax.plot(t_arr, raw_arr, label="Raw Snippet Anomaly s(t)", color="#adb5bd", linestyle=":", alpha=0.7, linewidth=1.2)
-    ax.plot(t_arr, smooth_arr, label="Smoothed Score s̃(t) (Causal EMA)", color="#1971c2", linewidth=2.2)
+    ax.plot(t_arr, raw_arr, label="Raw Snippet Anomaly s(t)", color="#6c757d", linestyle=":", alpha=0.8, linewidth=1.2)
+    ax.plot(t_arr, smooth_arr, label="Smoothed Score s̃(t) (Causal EMA)", color="#339af0", linewidth=2.4)
 
     # Threshold horizontal guides
-    ax.axhline(threshold_high, color="#e03131", linestyle="--", alpha=0.85, linewidth=1.2, label=f"Event High Trigger ({threshold_high:.2f})")
-    ax.axhline(threshold_low, color="#f08c00", linestyle="--", alpha=0.85, linewidth=1.2, label=f"Event Low Sustain ({threshold_low:.2f})")
+    ax.axhline(threshold_high, color="#fa5252", linestyle="--", alpha=0.85, linewidth=1.2, label=f"Event High Trigger ({threshold_high:.2f})")
+    ax.axhline(threshold_low, color="#fd7e14", linestyle="--", alpha=0.85, linewidth=1.2, label=f"Event Low Sustain ({threshold_low:.2f})")
 
     # Shade formed incident intervals
     for ev in events:
-        ax.axvspan(ev.start_sec, min(ev.end_sec, current_time_sec), color="#e03131", alpha=0.22)
+        ax.axvspan(ev.start_sec, min(ev.end_sec, current_time_sec), color="#fa5252", alpha=0.28)
         mid_x = (ev.start_sec + min(ev.end_sec, current_time_sec)) / 2.0
         ax.text(
             mid_x,
-            min(1.0, ev.peak_score + 0.05),
+            min(0.98, max(0.15, ev.peak_score + 0.05)),
             f"Event {ev.event_id}\n({ev.duration_sec:.1f}s)",
-            color="#960000",
+            color="#ff8787",
             fontsize=8.5,
             fontweight="bold",
             ha="center",
@@ -177,40 +179,43 @@ def render_live_plot(
 
     # Cursor line showing current video progress
     if current_time_sec > 0:
-        ax.axvline(current_time_sec, color="#2f9e44", linestyle="-", linewidth=1.8, label="Current Video Time")
+        ax.axvline(current_time_sec, color="#51cf66", linestyle="-", linewidth=1.8, label="Current Video Time")
 
-    ax.set_xlabel("Video Time (seconds)", fontsize=10, fontweight="bold")
-    ax.set_ylabel("Continuous Anomaly Score", fontsize=10, fontweight="bold")
+    ax.set_xlabel("Video Time (seconds)", fontsize=10, fontweight="bold", color="#ced4da")
+    ax.set_ylabel("Continuous Anomaly Score", fontsize=10, fontweight="bold", color="#ced4da")
     ax.set_ylim(-0.05, 1.1)
     ax.set_xlim(-0.5, max(1.0, total_duration_sec, current_time_sec + 0.5))
-    ax.grid(True, linestyle="--", alpha=0.45)
-    ax.legend(loc="upper right", framealpha=0.92, fontsize=8.5)
+    ax.tick_params(colors="#adb5bd")
+    for spine in ax.spines.values():
+        spine.set_color("#373a40")
+    ax.grid(True, linestyle="--", alpha=0.25, color="#5c5f66")
+    ax.legend(loc="upper right", facecolor="#14171f", edgecolor="#373a40", labelcolor="#e9ecef", fontsize=8.5)
     fig.tight_layout()
     return fig
 
 
 def get_idle_status_html() -> str:
-    """Returns initial status card displaying resident model and standby inference status."""
+    """Returns initial status card displaying resident model and standby inference status with high dark-mode contrast."""
     return """
-    <div style='background-color: #f8f9fa; border: 2px dashed #adb5bd; border-radius: 12px; padding: 18px; margin-bottom: 8px;'>
+    <div style='background: #14171f !important; border: 2px dashed #495057 !important; border-radius: 12px; padding: 18px; margin-bottom: 8px;'>
         <div style='display: flex; justify-content: space-between; align-items: center;'>
             <div>
-                <span style='font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #495057;'>System Status & Readiness</span>
-                <h3 style='margin: 4px 0 0 0; color: #2b8a3e; font-size: 20px; font-weight: 800;'>🟢 MODEL RESIDENT & READY FOR PROGRESSIVE INFERENCE</h3>
+                <span style='font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #ced4da !important;'>System Status & Readiness</span>
+                <h3 style='margin: 4px 0 0 0; color: #51cf66 !important; font-size: 20px; font-weight: 800;'>🟢 MODEL RESIDENT & READY FOR PROGRESSIVE INFERENCE</h3>
             </div>
             <div style='text-align: right;'>
-                <span style='font-size: 11px; color: #6c757d;'>Inference Status</span>
-                <div style='font-size: 16px; font-weight: 800; color: #495057;'>STANDBY</div>
+                <span style='font-size: 11px; color: #adb5bd !important;'>Inference Status</span>
+                <div style='font-size: 16px; font-weight: 800; color: #ced4da !important;'>STANDBY</div>
             </div>
         </div>
-        <p style='margin: 10px 0 8px 0; font-size: 13.5px; color: #495057;'>
-            Upload an arbitrary surveillance video (<code>.mp4</code>, <code>.avi</code>, <code>.mov</code>) or select a verified benchmark preset, then click <strong>'START PROGRESSIVE INFERENCE'</strong>.
+        <p style='margin: 10px 0 8px 0; font-size: 13.5px; color: #e9ecef !important;'>
+            Upload a surveillance video (<code>.mp4</code>, <code>.avi</code>, <code>.mov</code>) or select a verified benchmark preset, then click <strong style='color: #74c0fc !important;'>'START PROGRESSIVE INFERENCE'</strong>.
         </p>
-        <div style='background: white; border: 1px solid #dee2e6; border-radius: 6px; padding: 8px 12px; margin-top: 8px; font-size: 11.5px; color: #495057; display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between;'>
-            <span><strong>Model Status:</strong> Resident in GPU VRAM (Frozen S3D 1024-d + Dilated Causal TCN)</span>
-            <span><strong>Inference Status:</strong> Standby (Awaiting video input)</span>
-            <span><strong>Streaming Mode:</strong> Progressive Real-Time Raw-Video Inference (16-frame snippets)</span>
-            <span><strong>Decision Engine:</strong> Deterministic Decision-Support Heuristic Layer</span>
+        <div style='background: #1e222d !important; border: 1px solid #2e3340 !important; border-radius: 6px; padding: 8px 12px; margin-top: 8px; font-size: 11.5px; color: #adb5bd !important; display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between;'>
+            <span><strong style='color: #f1f3f5 !important;'>Model Status:</strong> Resident in GPU VRAM (Frozen S3D 1024-d + Dilated Causal TCN)</span>
+            <span><strong style='color: #f1f3f5 !important;'>Inference Status:</strong> Standby (Awaiting video input)</span>
+            <span><strong style='color: #f1f3f5 !important;'>Streaming Mode:</strong> Progressive Real-Time Raw-Video Inference (16-frame snippets)</span>
+            <span><strong style='color: #f1f3f5 !important;'>Decision Engine:</strong> Deterministic Decision-Support Heuristic Layer</span>
         </div>
     </div>
     """
@@ -223,44 +228,88 @@ def format_status_card(update: StreamUpdate, is_arbitrary: bool = True) -> str:
     score = risk.risk_score if risk else 0.0
 
     color_palette = {
-        "High Risk": ("#e03131", "#fff5f5", "🔴 HIGH RISK INCIDENT"),
-        "Medium Risk": ("#f08c00", "#fff9db", "🟠 MEDIUM RISK ANOMALY"),
-        "Low Risk": ("#1971c2", "#e7f5ff", "🔵 LOW RISK ANOMALY"),
-        "Normal": ("#2b8a3e", "#ebfbee", "🟢 NORMAL SURVEILLANCE"),
+        "High Risk": {
+            "border": "#e03131",
+            "bg": "#1f1418",
+            "title_color": "#ff6b6b",
+            "score_color": "#ff8787",
+            "header": "🔴 HIGH RISK INCIDENT",
+            "badge_bg": "#491217",
+            "badge_text": "#ffa8a8",
+        },
+        "Medium Risk": {
+            "border": "#f08c00",
+            "bg": "#1f1b14",
+            "title_color": "#ffa94d",
+            "score_color": "#ffd43b",
+            "header": "🟠 MEDIUM RISK ANOMALY",
+            "badge_bg": "#482705",
+            "badge_text": "#ffd8a8",
+        },
+        "Low Risk": {
+            "border": "#1971c2",
+            "bg": "#141a24",
+            "title_color": "#74c0fc",
+            "score_color": "#a5d8ff",
+            "header": "🔵 LOW RISK ANOMALY",
+            "badge_bg": "#0b2b48",
+            "badge_text": "#a5d8ff",
+        },
+        "Normal": {
+            "border": "#2b8a3e",
+            "bg": "#141f17",
+            "title_color": "#69db7c",
+            "score_color": "#b2f2bb",
+            "header": "🟢 NORMAL SURVEILLANCE",
+            "badge_bg": "#0b3b19",
+            "badge_text": "#b2f2bb",
+        },
     }
-    badge_color, bg_color, header_text = color_palette.get(level, ("#495057", "#f8f9fa", "⚪ STATUS"))
+    cfg = color_palette.get(level, {
+        "border": "#495057",
+        "bg": "#14171f",
+        "title_color": "#adb5bd",
+        "score_color": "#ced4da",
+        "header": "⚪ STATUS",
+        "badge_bg": "#252932",
+        "badge_text": "#ced4da",
+    })
 
-    gt_badge = "<span style='background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;'>Ground Truth: UNKNOWN (Upload)</span>" if is_arbitrary else "<span style='background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;'>Benchmark Sample</span>"
+    gt_badge = (
+        f"<span style='background: {cfg['badge_bg']} !important; color: {cfg['badge_text']} !important; border: 1px solid {cfg['border']} !important; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;'>Ground Truth: UNKNOWN (Upload)</span>"
+        if is_arbitrary
+        else f"<span style='background: {cfg['badge_bg']} !important; color: {cfg['badge_text']} !important; border: 1px solid {cfg['border']} !important; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;'>Benchmark Sample</span>"
+    )
     inf_status = "Evaluation Complete" if update.is_complete else f"Evaluating Snippets ({update.frames_processed}/{update.total_frames} frames)"
 
     return f"""
-    <div style='background-color: {bg_color}; border: 2px solid {badge_color}; border-radius: 12px; padding: 16px; margin-bottom: 8px;'>
+    <div style='background: {cfg['bg']} !important; border: 2px solid {cfg['border']} !important; border-radius: 12px; padding: 16px; margin-bottom: 8px;'>
         <div style='display: flex; justify-content: space-between; align-items: center;'>
             <div>
-                <span style='font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #555;'>Operational Triage Decision (Deterministic Decision-Support Heuristic)</span>
-                <h2 style='margin: 4px 0 0 0; color: {badge_color}; font-size: 24px; font-weight: 900;'>{header_text}</h2>
+                <span style='font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #ced4da !important;'>Operational Triage Decision (Deterministic Decision-Support Heuristic)</span>
+                <h2 style='margin: 4px 0 0 0; color: {cfg['title_color']} !important; font-size: 24px; font-weight: 900;'>{cfg['header']}</h2>
             </div>
             <div style='text-align: right;'>
-                <span style='font-size: 11px; color: #666;'>Risk Metric R ∈ [0, 1]</span>
-                <div style='font-size: 28px; font-weight: 900; color: #111;'>{score:.3f}</div>
+                <span style='font-size: 11px; color: #ced4da !important;'>Risk Metric R ∈ [0, 1]</span>
+                <div style='font-size: 30px; font-weight: 900; color: {cfg['score_color']} !important;'>{score:.3f}</div>
             </div>
         </div>
-        <p style='margin: 10px 0 6px 0; font-size: 13.5px; line-height: 1.45; color: #333;'>
-            <strong>Operational Assessment:</strong> {risk.explanation if risk else 'Evaluating continuous frame sequence...'}
+        <p style='margin: 10px 0 6px 0; font-size: 14px; line-height: 1.45; color: #f8f9fa !important;'>
+            <strong style='color: #ffffff !important;'>Operational Assessment:</strong> {risk.explanation if risk else 'Evaluating continuous frame sequence...'}
         </p>
-        <div style='display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #555; margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd;'>
-            <span><strong>Current Score:</strong> {update.current_raw_score:.3f}</span>
-            <span><strong>EMA Smoothed:</strong> {update.current_smooth_score:.3f}</span>
-            <span><strong>Active Events:</strong> {len(update.active_events)}</span>
-            <span><strong>Video Time:</strong> {update.video_timestamp_sec:.1f} / {update.total_duration_sec:.1f}s</span>
-            <span><strong>Processing Speed:</strong> {update.processing_fps:.1f} FPS</span>
+        <div style='display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #ced4da !important; margin-top: 10px; padding-top: 8px; border-top: 1px solid #2e3340;'>
+            <span><strong style='color: #f1f3f5 !important;'>Current Score:</strong> {update.current_raw_score:.3f}</span>
+            <span><strong style='color: #f1f3f5 !important;'>EMA Smoothed:</strong> {update.current_smooth_score:.3f}</span>
+            <span><strong style='color: #f1f3f5 !important;'>Active Events:</strong> {len(update.active_events)}</span>
+            <span><strong style='color: #f1f3f5 !important;'>Video Time:</strong> {update.video_timestamp_sec:.1f} / {update.total_duration_sec:.1f}s</span>
+            <span><strong style='color: #f1f3f5 !important;'>Processing Speed:</strong> {update.processing_fps:.1f} FPS</span>
             {gt_badge}
         </div>
-        <div style='background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 6px 12px; margin-top: 10px; font-size: 11.5px; color: #495057; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between;'>
-            <span><strong>Model Status:</strong> Active & Resident in GPU VRAM (Frozen S3D + Dilated Causal TCN)</span>
-            <span><strong>Inference Status:</strong> {inf_status}</span>
-            <span><strong>Streaming Mode:</strong> Progressive Real-Time Raw-Video Inference</span>
-            <span><strong>Decision Engine:</strong> Deterministic Decision-Support Heuristic</span>
+        <div style='background: #14171f !important; border: 1px solid #2e3340 !important; border-radius: 6px; padding: 6px 12px; margin-top: 10px; font-size: 11.5px; color: #adb5bd !important; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between;'>
+            <span><strong style='color: #f1f3f5 !important;'>Model Status:</strong> Active & Resident in GPU VRAM (Frozen S3D + Dilated Causal TCN)</span>
+            <span><strong style='color: #f1f3f5 !important;'>Inference Status:</strong> {inf_status}</span>
+            <span><strong style='color: #f1f3f5 !important;'>Streaming Mode:</strong> Progressive Real-Time Raw-Video Inference</span>
+            <span><strong style='color: #f1f3f5 !important;'>Decision Engine:</strong> Deterministic Decision-Support Heuristic</span>
         </div>
     </div>
     """
@@ -270,7 +319,7 @@ def stop_streaming_detection():
     """Stops currently executing streaming detection run."""
     engine = get_streaming_inference_engine()
     engine.cancel()
-    return "Detection stop signal sent."
+    return None
 
 
 def reset_application_session():
@@ -431,6 +480,7 @@ def run_streaming_detection(
             )
 
             # Yield display update without blocking (14 outputs)
+            # Note: video_output_display is None during progressive streaming to prevent HTML5 player thrashing
             yield (
                 status_html,
                 update.current_annotated_frame_rgb,
@@ -438,7 +488,7 @@ def run_streaming_detection(
                 update.peak_incident_frame_rgb,
                 events_df,
                 telemetry_text,
-                str(video_path),
+                None,
                 None, None, None, None, None, None, None,
             )
 
@@ -476,7 +526,7 @@ def run_streaming_detection(
         # 4B. Save High-Res Timeline Plot
         plot_path = dir_plots / "timeline.png"
         fig.savefig(plot_path, dpi=250)
-        plt.close(fig)
+        # Note: Do not close fig here so it can be rendered to Gradio in the final yield below
 
         # 4C. Save Anomaly Scores CSV
         scores_df = pd.DataFrame({
@@ -666,34 +716,69 @@ def analyze_benchmark_sample(
     overall_risk = risk_layer.assess_video(events, overall_peak_score=overall_peak)
 
     color_map = {
-        "High Risk": ("#e03131", "#fff5f5"),
-        "Medium Risk": ("#f08c00", "#fff9db"),
-        "Low Risk": ("#1971c2", "#e7f5ff"),
-        "Normal": ("#2b8a3e", "#ebfbee"),
+        "High Risk": {
+            "border": "#e03131",
+            "bg": "#1f1418",
+            "title_color": "#ff6b6b",
+            "score_color": "#ff8787",
+            "badge_bg": "#491217",
+            "badge_text": "#ffa8a8",
+        },
+        "Medium Risk": {
+            "border": "#f08c00",
+            "bg": "#1f1b14",
+            "title_color": "#ffa94d",
+            "score_color": "#ffd43b",
+            "badge_bg": "#482705",
+            "badge_text": "#ffd8a8",
+        },
+        "Low Risk": {
+            "border": "#1971c2",
+            "bg": "#141a24",
+            "title_color": "#74c0fc",
+            "score_color": "#a5d8ff",
+            "badge_bg": "#0b2b48",
+            "badge_text": "#a5d8ff",
+        },
+        "Normal": {
+            "border": "#2b8a3e",
+            "bg": "#141f17",
+            "title_color": "#69db7c",
+            "score_color": "#b2f2bb",
+            "badge_bg": "#0b3b19",
+            "badge_text": "#b2f2bb",
+        },
     }
-    badge_color, bg_color = color_map.get(overall_risk.risk_level, ("#6c757d", "#f8f9fa"))
+    t2_cfg = color_map.get(overall_risk.risk_level, {
+        "border": "#495057",
+        "bg": "#14171f",
+        "title_color": "#adb5bd",
+        "score_color": "#ced4da",
+        "badge_bg": "#252932",
+        "badge_text": "#ced4da",
+    })
 
     status_html = f"""
-    <div style='background-color: {bg_color}; border: 2px solid {badge_color}; border-radius: 12px; padding: 16px; margin-bottom: 8px;'>
+    <div style='background: {t2_cfg['bg']} !important; border: 2px solid {t2_cfg['border']} !important; border-radius: 12px; padding: 16px; margin-bottom: 8px;'>
         <div style='display: flex; justify-content: space-between; align-items: center;'>
             <div>
-                <span style='font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #555;'>Benchmark Operational Triage</span>
-                <h2 style='margin: 3px 0 0 0; color: {badge_color}; font-size: 24px; font-weight: 900;'>{overall_risk.risk_level}</h2>
+                <span style='font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #ced4da !important;'>Benchmark Operational Triage</span>
+                <h2 style='margin: 3px 0 0 0; color: {t2_cfg['title_color']} !important; font-size: 24px; font-weight: 900;'>{overall_risk.risk_level}</h2>
             </div>
             <div style='text-align: right;'>
-                <span style='font-size: 11px; color: #666;'>Risk Metric R</span>
-                <div style='font-size: 28px; font-weight: 900; color: #111;'>{overall_risk.risk_score:.3f}</div>
+                <span style='font-size: 11px; color: #ced4da !important;'>Risk Metric R</span>
+                <div style='font-size: 30px; font-weight: 900; color: {t2_cfg['score_color']} !important;'>{overall_risk.risk_score:.3f}</div>
             </div>
         </div>
-        <p style='margin: 10px 0 6px 0; font-size: 13.5px; line-height: 1.45; color: #333;'>
-            <strong>Explainability Breakdown:</strong> {overall_risk.explanation}
+        <p style='margin: 10px 0 6px 0; font-size: 14px; line-height: 1.45; color: #f8f9fa !important;'>
+            <strong style='color: #ffffff !important;'>Explainability Breakdown:</strong> {overall_risk.explanation}
         </p>
-        <div style='display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: #555; margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd;'>
-            <span><strong>Video ID:</strong> {video_id}</span>
-            <span><strong>Category:</strong> {category}</span>
-            <span><strong>Dataset Ground Truth:</strong> {gt_str}</span>
-            <span><strong>Formed Events:</strong> {len(events)}</span>
-            <span><strong>Scoring Latency:</strong> {tcn_ms:.2f} ms</span>
+        <div style='display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: #ced4da !important; margin-top: 10px; padding-top: 8px; border-top: 1px solid #2e3340;'>
+            <span><strong style='color: #f1f3f5 !important;'>Video ID:</strong> {video_id}</span>
+            <span><strong style='color: #f1f3f5 !important;'>Category:</strong> {category}</span>
+            <span><strong style='color: #f1f3f5 !important;'>Dataset Ground Truth:</strong> {gt_str}</span>
+            <span><strong style='color: #f1f3f5 !important;'>Formed Events:</strong> {len(events)}</span>
+            <span><strong style='color: #f1f3f5 !important;'>Scoring Latency:</strong> {tcn_ms:.2f} ms</span>
         </div>
     </div>
     """
@@ -893,8 +978,14 @@ def create_full_application() -> gr.Blocks:
 
                 with gr.Row():
                     events_table = gr.Dataframe(
+                        headers=[
+                            "Event ID", "Start (s)", "End (s)", "Duration",
+                            "Peak Anomaly", "Mean Anomaly", "Risk Score", "Operational Tier",
+                            "Event Type", "Ground Truth",
+                        ],
                         label="Detected Persistent Incidents (Operational Events Table)",
                         interactive=False,
+                        wrap=True,
                     )
 
                 with gr.Row():
@@ -917,7 +1008,7 @@ def create_full_application() -> gr.Blocks:
                     manifest_download = gr.File(label="Run Manifest (.json)")
 
                 # Wiring for Tab 1
-                start_btn.click(
+                start_event = start_btn.click(
                     fn=run_streaming_detection,
                     inputs=[
                         video_input,
@@ -951,6 +1042,7 @@ def create_full_application() -> gr.Blocks:
                     fn=stop_streaming_detection,
                     inputs=[],
                     outputs=[],
+                    cancels=[start_event],
                 )
 
                 reset_btn.click(
@@ -975,6 +1067,7 @@ def create_full_application() -> gr.Blocks:
                         json_report_download,
                         manifest_download,
                     ],
+                    cancels=[start_event],
                 )
 
             # ------------------------------------------------------------------
@@ -1005,7 +1098,15 @@ def create_full_application() -> gr.Blocks:
                     t2_timeline_plot = gr.Plot(label="Benchmark Temporal Anomaly Timeline")
 
                 with gr.Row():
-                    t2_events_table = gr.Dataframe(label="Detected Incidents", interactive=False)
+                    t2_events_table = gr.Dataframe(
+                        headers=[
+                            "Event ID", "Start (s)", "End (s)", "Duration",
+                            "Peak Anomaly", "Mean Anomaly", "Risk Score", "Operational Tier",
+                        ],
+                        label="Detected Incidents",
+                        interactive=False,
+                        wrap=True,
+                    )
 
                 with gr.Row():
                     t2_diag_box = gr.Textbox(label="Sample Diagnostics", interactive=False)
