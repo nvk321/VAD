@@ -461,13 +461,13 @@ print(f"Alert Fragmentation Reduction: -{frag_reduction:.1f}%")""")
     # SECTION 18
     # -------------------------------------------------------------------------
     add_md("""---
-## Section 18: Operational Risk Decision Formulation
-The deterministic operational risk formula prioritizes events based on amplitude and persistence:
-$$R = 0.65 \\cdot s_{\\max}^{\\text{smooth}} + 0.35 \\cdot \\min\\left(1.0, \\frac{\\Delta t}{8.0}\\right)$$
+## Section 18: Operational Risk Formulation (Deterministic Decision-Support Heuristic)
+The operational risk metric prioritizes formed events via a transparent deterministic decision-support heuristic:
+$$R = 0.65 \\cdot s_{\\max}^{\\text{event}} + 0.35 \\cdot \\min\\left(1.0, \\frac{\\Delta t}{8.0}\\right)$$
 
 > **CRITICAL SCIENTIFIC DISTINCTION:**
-> - $s_{\\max}^{\\text{smooth}}$ is the **causal EMA smoothed peak** within the event, NOT the raw snippet spike.
-> - The duration factor saturates at 8.0 seconds.""")
+> - $s_{\\max}^{\\text{event}}$ is the **causal EMA smoothed peak** within the specific confirmed event window, NOT the raw snippet spike or video-wide peak.
+> - The duration factor $\\phi = \\min(1.0, \\Delta t / 8.0)$ saturates at 8.0 seconds of sustained persistence.""")
     add_code("""from src.risk.decision_layer import RiskDecisionLayer
 
 risk_layer = RiskDecisionLayer(
@@ -510,14 +510,16 @@ print(f"Explanation: {overall_risk.explanation}")""")
     # -------------------------------------------------------------------------
     add_md("""---
 ## Section 20: Mathematical Consistency Audit across Diagnostic Video Samples
-Inspecting the audit log of all 9 diagnostic video targets.""")
+Inspecting the audit log of all 9 diagnostic video targets. Every displayed operational risk score $R$ is reproduced step-by-step from the event smoothed peak and persistence duration:
+$$R = 0.65 \\cdot s_{\\max}^{\\text{event}} + 0.35 \\cdot \\min\\left(1.0, \\frac{\\Delta t}{8.0}\\right)$$""")
     add_code("""diag_json = PROJECT_ROOT / "outputs/external_video_diagnostics.json"
 if diag_json.is_file():
     with open(diag_json, "r", encoding="utf-8") as f:
         audit_data = json.load(f)
     print(f"Loaded {len(audit_data)} audited video targets:")
     for vid, d in audit_data.items():
-        print(f" - {vid:40s} | Risk: {d['operational_risk_score']:.4f} ({d['operational_risk_tier']:10s}) | Audit: {d['risk_formula_audit']}")
+        print(f" - {vid[:45]:45s} | Risk: {d['operational_risk_score']:.4f} ({d['operational_risk_tier']:10s}) | Audit: {d['risk_formula_audit']}")
+        print(f"    Formula Reproduction: {d.get('formula_reproduction', 'N/A')}")
 else:
     print("Run scripts/diagnose_external_videos.py to regenerate audit ledger.")""")
 
@@ -526,7 +528,11 @@ else:
     # -------------------------------------------------------------------------
     add_md("""---
 ## Section 21: Generalization Analysis & External Video Diagnostics
-Rigorous scientific diagnosis of real-world video uploads using the standardized 8-category failure taxonomy.""")
+Rigorous scientific diagnosis of real-world video uploads using the standardized 8-category failure taxonomy.
+
+> **STABILITY AGAINST AD-HOC RETRAINING:**
+> External diagnostic failures must **never** automatically trigger threshold, model, or retraining changes.
+> Tuning thresholds to fit ad-hoc external videos causes overfitting to noise and destroys the operating point calibrated on the formal validation split.""")
     add_code("""if diag_json.is_file():
     print("Scientific Classification Breakdown:")
     for vid, d in audit_data.items():
@@ -540,7 +546,10 @@ Rigorous scientific diagnosis of real-world video uploads using the standardized
     # -------------------------------------------------------------------------
     add_md("""---
 ## Section 22: Feature Distribution Generalization & PCA Projection
-Comparing S3D feature distributions between in-distribution UCF-Crime validation samples and external video uploads.""")
+Comparing S3D feature distributions between in-distribution UCF-Crime validation samples and external video uploads.
+
+> **SCIENTIFIC FRAMING ON DISTRIBUTIONAL SHIFT:**
+> PCA projections and centroid cosine distances provide **quantitative supporting evidence of distributional shift**; they do **not** "prove OOD" status.""")
     add_code("""from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 
@@ -559,8 +568,8 @@ plt.figure(figsize=(9, 5), dpi=150)
 plt.scatter(coords[:40, 0], coords[:40, 1], c="#2b8a3e", label="UCF-Crime Normal", alpha=0.7)
 plt.scatter(coords[40:80, 0], coords[40:80, 1], c="#e03131", label="UCF-Crime Anomaly", alpha=0.7)
 plt.scatter(coords[80:90, 0], coords[80:90, 1], c="#1971c2", marker="^", s=80, label="External CCTV (Gawler)", alpha=0.9)
-plt.scatter(coords[90:100, 0], coords[90:100, 1], c="#f08c00", marker="X", s=80, label="External Smartphone (OOD)", alpha=0.9)
-plt.title("S3D Feature Space PCA: Generalization & Domain Shift Analysis", fontsize=11, fontweight="bold")
+plt.scatter(coords[90:100, 0], coords[90:100, 1], c="#f08c00", marker="X", s=80, label="External Smartphone (Distributional Shift)", alpha=0.9)
+plt.title("S3D Feature Space PCA: Quantitative Evidence of Distributional Shift", fontsize=11, fontweight="bold")
 plt.xlabel("PCA Component 1")
 plt.ylabel("PCA Component 2")
 plt.legend(framealpha=0.9)

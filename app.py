@@ -189,8 +189,35 @@ def render_live_plot(
     return fig
 
 
+def get_idle_status_html() -> str:
+    """Returns initial status card displaying resident model and standby inference status."""
+    return """
+    <div style='background-color: #f8f9fa; border: 2px dashed #adb5bd; border-radius: 12px; padding: 18px; margin-bottom: 8px;'>
+        <div style='display: flex; justify-content: space-between; align-items: center;'>
+            <div>
+                <span style='font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #495057;'>System Status & Readiness</span>
+                <h3 style='margin: 4px 0 0 0; color: #2b8a3e; font-size: 20px; font-weight: 800;'>🟢 MODEL RESIDENT & READY FOR PROGRESSIVE INFERENCE</h3>
+            </div>
+            <div style='text-align: right;'>
+                <span style='font-size: 11px; color: #6c757d;'>Inference Status</span>
+                <div style='font-size: 16px; font-weight: 800; color: #495057;'>STANDBY</div>
+            </div>
+        </div>
+        <p style='margin: 10px 0 8px 0; font-size: 13.5px; color: #495057;'>
+            Upload an arbitrary surveillance video (<code>.mp4</code>, <code>.avi</code>, <code>.mov</code>) or select a verified benchmark preset, then click <strong>'START PROGRESSIVE INFERENCE'</strong>.
+        </p>
+        <div style='background: white; border: 1px solid #dee2e6; border-radius: 6px; padding: 8px 12px; margin-top: 8px; font-size: 11.5px; color: #495057; display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between;'>
+            <span><strong>Model Status:</strong> Resident in GPU VRAM (Frozen S3D 1024-d + Dilated Causal TCN)</span>
+            <span><strong>Inference Status:</strong> Standby (Awaiting video input)</span>
+            <span><strong>Streaming Mode:</strong> Progressive Real-Time Raw-Video Inference (16-frame snippets)</span>
+            <span><strong>Decision Engine:</strong> Deterministic Decision-Support Heuristic Layer</span>
+        </div>
+    </div>
+    """
+
+
 def format_status_card(update: StreamUpdate, is_arbitrary: bool = True) -> str:
-    """Formats a modern, high-contrast operational status HUD card."""
+    """Formats a modern, high-contrast operational status HUD card with explicit Model and Inference status."""
     risk = update.current_risk
     level = risk.risk_level if risk else "Normal"
     score = risk.risk_score if risk else 0.0
@@ -204,16 +231,17 @@ def format_status_card(update: StreamUpdate, is_arbitrary: bool = True) -> str:
     badge_color, bg_color, header_text = color_palette.get(level, ("#495057", "#f8f9fa", "⚪ STATUS"))
 
     gt_badge = "<span style='background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;'>Ground Truth: UNKNOWN (Upload)</span>" if is_arbitrary else "<span style='background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;'>Benchmark Sample</span>"
+    inf_status = "Evaluation Complete" if update.is_complete else f"Evaluating Snippets ({update.frames_processed}/{update.total_frames} frames)"
 
     return f"""
     <div style='background-color: {bg_color}; border: 2px solid {badge_color}; border-radius: 12px; padding: 16px; margin-bottom: 8px;'>
         <div style='display: flex; justify-content: space-between; align-items: center;'>
             <div>
-                <span style='font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #555;'>Operational Triage Decision</span>
+                <span style='font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #555;'>Operational Triage Decision (Deterministic Decision-Support Heuristic)</span>
                 <h2 style='margin: 4px 0 0 0; color: {badge_color}; font-size: 24px; font-weight: 900;'>{header_text}</h2>
             </div>
             <div style='text-align: right;'>
-                <span style='font-size: 11px; color: #666;'>Risk Score R ∈ [0, 1]</span>
+                <span style='font-size: 11px; color: #666;'>Risk Metric R ∈ [0, 1]</span>
                 <div style='font-size: 28px; font-weight: 900; color: #111;'>{score:.3f}</div>
             </div>
         </div>
@@ -228,6 +256,12 @@ def format_status_card(update: StreamUpdate, is_arbitrary: bool = True) -> str:
             <span><strong>Processing Speed:</strong> {update.processing_fps:.1f} FPS</span>
             {gt_badge}
         </div>
+        <div style='background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 6px 12px; margin-top: 10px; font-size: 11.5px; color: #495057; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between;'>
+            <span><strong>Model Status:</strong> Active & Resident in GPU VRAM (Frozen S3D + Dilated Causal TCN)</span>
+            <span><strong>Inference Status:</strong> {inf_status}</span>
+            <span><strong>Streaming Mode:</strong> Progressive Real-Time Raw-Video Inference</span>
+            <span><strong>Decision Engine:</strong> Deterministic Decision-Support Heuristic</span>
+        </div>
     </div>
     """
 
@@ -241,7 +275,7 @@ def stop_streaming_detection():
 
 def reset_application_session():
     """Resets UI components to their initial clean states."""
-    idle_html = "<div style='padding: 16px; border: 2px dashed #bbb; border-radius: 12px; text-align: center; color: #777;'>Upload a video or select a preset, then click <strong>'START ANOMALY DETECTION'</strong>.</div>"
+    idle_html = get_idle_status_html()
     empty_df = pd.DataFrame(columns=[
         "Event ID", "Start (s)", "End (s)", "Duration",
         "Peak Anomaly", "Mean Anomaly", "Risk Score", "Operational Tier",
@@ -388,11 +422,11 @@ def run_streaming_detection(
             progress_pct = (update.frames_processed / max(1, update.total_frames)) * 100.0
             rt_factor = (update.processing_fps / 30.0)
             telemetry_text = (
-                f"Status: {update.status_banner} ({progress_pct:.1f}% complete)\n"
-                f"Video Time: {update.video_timestamp_sec:.2f}s / {update.total_duration_sec:.2f}s | "
-                f"Frames: {update.frames_processed} / {update.total_frames}\n"
-                f"Throughput: {update.processing_fps:.1f} FPS (Real-Time Factor: {rt_factor:.2f}x) | Latency: {update.model_latency_ms:.1f} ms\n"
-                f"Device: {engine.device.upper()} | Model: Frozen S3D (1024-d) + Dilated Causal TCN\n"
+                f"Model Status: Active in GPU VRAM (Frozen S3D 1024-d + Dilated Causal TCN | exp_B_tcn best_auc.pt)\n"
+                f"Inference Status: {update.status_banner} ({progress_pct:.1f}% complete) | Mode: Progressive Real-Time Stream Evaluation\n"
+                f"Video Progress: {update.video_timestamp_sec:.2f}s / {update.total_duration_sec:.2f}s | Frames: {update.frames_processed} / {update.total_frames}\n"
+                f"Throughput: {update.processing_fps:.1f} FPS (Real-Time Factor: {rt_factor:.2f}x) | Latency: {update.model_latency_ms:.1f} ms | Device: {engine.device.upper()}\n"
+                f"Decision Engine: Deterministic Decision-Support Heuristic (Thresholds: Th={threshold_high:.2f}, Tl={threshold_low:.2f}, tau={min_persistence:.1f}s)\n"
                 f"Active Run ID: {run_id}"
             )
 
@@ -541,9 +575,12 @@ def run_streaming_detection(
 
         final_status = "DETECTION CANCELLED" if is_cancelled else "DETECTION COMPLETE"
         final_telemetry = (
-            f"Execution: {final_status}\n"
+            f"Model Status: Resident in GPU VRAM (Frozen S3D 1024-d + Dilated Causal TCN)\n"
+            f"Inference Status: {final_status} (Execution complete, all snippets evaluated)\n"
+            f"Inference Mode: Progressive Real-Time Raw-Video Inference (Zero future leakage)\n"
             f"Video Time: {last_update.total_duration_sec:.1f}s | Frames: {last_update.total_frames}\n"
             f"Average Throughput: {last_update.processing_fps:.1f} FPS | Device: {engine.device.upper()}\n"
+            f"Decision Engine: Deterministic Decision-Support Heuristic | Confirmed Events: {len(last_update.active_events)}\n"
             f"Ground Truth: {'UNKNOWN (Uploaded Video)' if is_arbitrary_upload else 'UCF-Crime Benchmark Sample'}\n"
             f"Artifacts isolated in: {run_dir}"
         )
@@ -790,22 +827,23 @@ def create_full_application() -> gr.Blocks:
         with gr.Tabs() as tabs:
 
             # ------------------------------------------------------------------
-            # TAB 1: Live Anomaly Detection (Primary Surveillance Console)
+            # TAB 1: Progressive Raw Video Inference (Primary Surveillance Console)
             # ------------------------------------------------------------------
-            with gr.Tab("🎥 Live Detection (Raw Video)", id="tab_live"):
+            with gr.Tab("🎥 Progressive Video Inference (Raw Video)", id="tab_live"):
                 gr.Markdown(
                     """
-                    Upload an arbitrary surveillance video (`.mp4`, `.avi`, `.mov`) or select a verified benchmark preset.
+                    Upload a surveillance video (`.mp4`, `.avi`, `.mov`) or select a verified benchmark preset.
                     The system sequentially decodes frames, extracts 1024-d spatiotemporal representations via frozen S3D,
                     evaluates the dilated causal TCN, smooths scores with online EMA, forms persistent incident intervals,
-                    and executes deterministic operational risk triage.
+                    and executes deterministic operational risk triage in progressive real-time without future leakage.
+                    *(Note: Evaluates raw video files sequentially snippet-by-snippet; not an RTSP hardware camera connection).*
                     """
                 )
 
                 with gr.Row():
                     with gr.Column(scale=4):
                         video_input = gr.Video(
-                            label="Upload Surveillance Video",
+                            label="Upload Video for Progressive Inference",
                             sources=["upload"],
                         )
                         preset_dropdown = gr.Dropdown(
@@ -820,7 +858,7 @@ def create_full_application() -> gr.Blocks:
                         )
 
                         with gr.Row():
-                            start_btn = gr.Button("▶ START DETECTION", variant="primary", size="lg", scale=2)
+                            start_btn = gr.Button("▶ START PROGRESSIVE INFERENCE", variant="primary", size="lg", scale=2)
                             stop_btn = gr.Button("⏹ STOP", variant="stop", size="lg", scale=1)
                             reset_btn = gr.Button("🔄 RESET", variant="secondary", size="lg", scale=1)
 
@@ -833,12 +871,10 @@ def create_full_application() -> gr.Blocks:
                             max_gap_slider = gr.Slider(0.5, 4.0, value=1.2, step=0.2, label="Gap Bridging Threshold (sec)")
 
                     with gr.Column(scale=6):
-                        status_card = gr.HTML(
-                            value="<div style='padding: 16px; border: 2px dashed #bbb; border-radius: 12px; text-align: center; color: #777;'>Upload a video or select a preset, then click <strong>'START ANOMALY DETECTION'</strong>.</div>"
-                        )
+                        status_card = gr.HTML(value=get_idle_status_html())
                         with gr.Row():
                             live_hud_image = gr.Image(
-                                label="Live Surveillance Monitor (HUD Overlay Frame)",
+                                label="Progressive Video Inference Monitor (HUD Overlay Frame)",
                                 interactive=False,
                             )
                             video_output_display = gr.Video(

@@ -35,8 +35,8 @@ TAXONOMY_CATEGORIES = [
     "Verified preprocessing mismatch",
     "Verified short-duration event",
     "Verified post-processing suppression",
-    "Likely domain shift",
-    "Likely OOD",
+    "Evidence of distributional shift (handheld / mobile)",
+    "Evidence of distributional shift (synthetic rendering)",
     "Ambiguous / insufficient evidence",
     "Application bug",
     "Correct qualitative detection",
@@ -140,20 +140,33 @@ def run_comprehensive_diagnostics() -> Dict[str, dict]:
         mean_raw = float(np.mean(raw_scores)) if raw_scores else 0.0
         peak_smooth = float(np.max(smooth_scores)) if smooth_scores else 0.0
 
-        # Mathematical Risk Audit
+        # Mathematical Risk Audit (Deterministic Decision-Support Heuristic)
         calculated_risk = 0.0
         calculated_tier = "Normal"
         dur_max = 0.0
+        top_event_s_max = 0.0
+        top_event_dur = 0.0
+        top_event_phi = 0.0
+        formula_str = "No events formed (R = 0.0000)"
+
         if events:
-            # Pick highest risk event
+            # Pick highest risk event evaluated by the deterministic decision heuristic
             event_risks = [engine.risk_layer.assess_event(e) for e in events]
             top_ev_risk = max(event_risks, key=lambda a: a.risk_score)
             calculated_risk = top_ev_risk.risk_score
             calculated_tier = top_ev_risk.risk_level
             dur_max = top_ev_risk.duration_sec
+            top_event_s_max = top_ev_risk.peak_score
+            top_event_dur = top_ev_risk.duration_sec
+            top_event_phi = top_ev_risk.persistence_ratio
+            formula_str = (
+                f"0.65 * {top_event_s_max:.4f} + 0.35 * min(1.0, {top_event_dur:.2f}/8.0) "
+                f"= {0.65 * top_event_s_max:.4f} + {0.35 * top_event_phi:.4f} = {calculated_risk:.4f}"
+            )
         else:
-            calculated_risk = round(0.65 * peak_smooth, 4)
-            calculated_tier = "Normal" if calculated_risk < 0.25 else "Low Risk"
+            calculated_risk = 0.0
+            calculated_tier = "Normal"
+            formula_str = "No events formed (R = 0.0000)"
 
         actual_risk = risk.risk_score if risk else 0.0
         actual_tier = risk.risk_level if risk else "Normal"
@@ -216,10 +229,10 @@ def run_comprehensive_diagnostics() -> Dict[str, dict]:
                 evidence_notes.append(f"Clip is only {dur:.1f}s with vertical 9:16 aspect ratio. Explosion is momentary flash (< 0.4s), below 16-frame receptive threshold.")
         elif "Realistic-Highway" in v_name:
             # Simulated GTA CGI car crash with continuous artificial motion
-            classification = "Likely OOD"
+            classification = "Evidence of distributional shift (synthetic rendering)"
             evidence_notes.append(f"CGI/synthetic animation footage with synthetic rendering textures distinct from real CCTV optical sensors (CosSim to Anomaly={cos_abn:.3f}).")
         elif "Employee" in v_name:
-            classification = "Likely domain shift"
+            classification = "Evidence of distributional shift (handheld / mobile)"
             evidence_notes.append(f"Handheld mobile video with moving camera, social media text captions, and rapid zoom violating static CCTV viewpoint.")
         elif "WhatsApp" in v_name:
             classification = "Correct qualitative detection"
@@ -241,6 +254,9 @@ def run_comprehensive_diagnostics() -> Dict[str, dict]:
             "events_detected": len(events),
             "event_durations_sec": [e.duration_sec for e in events],
             "max_event_duration_sec": round(dur_max, 2),
+            "top_event_s_max": round(top_event_s_max, 4),
+            "top_event_phi": round(top_event_phi, 4),
+            "formula_reproduction": formula_str,
             "operational_risk_score": round(actual_risk, 4),
             "operational_risk_tier": actual_tier,
             "risk_formula_audit": "MATCH" if risk_is_consistent else "MISMATCH",
