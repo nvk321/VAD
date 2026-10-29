@@ -52,6 +52,41 @@ class StreamUpdate:
     status_banner: str = "NORMAL"
 
 
+_GLOBAL_STREAM_ENGINE: Optional["VideoStreamInference"] = None
+
+
+def get_streaming_inference_engine(
+    device: str = "auto",
+    ema_alpha: float = 0.25,
+    threshold_high: float = 0.60,
+    threshold_low: float = 0.40,
+    min_persistence_sec: float = 1.5,
+) -> "VideoStreamInference":
+    """Retrieves or initializes singleton VideoStreamInference engine.
+
+    Guarantees that expensive S3D backbone and TCN model weights are loaded
+    into GPU memory exactly once across all uploads and runs.
+    """
+    global _GLOBAL_STREAM_ENGINE
+    if _GLOBAL_STREAM_ENGINE is None:
+        _GLOBAL_STREAM_ENGINE = VideoStreamInference(
+            device=device,
+            ema_alpha=ema_alpha,
+            threshold_high=threshold_high,
+            threshold_low=threshold_low,
+            min_persistence_sec=min_persistence_sec,
+        )
+    else:
+        # Dynamically update operational parameters if changed via UI
+        _GLOBAL_STREAM_ENGINE.update_parameters(
+            ema_alpha=ema_alpha,
+            threshold_high=threshold_high,
+            threshold_low=threshold_low,
+            min_persistence_sec=min_persistence_sec,
+        )
+    return _GLOBAL_STREAM_ENGINE
+
+
 class VideoStreamInference:
     """End-to-end streaming inference pipeline for raw video anomaly detection."""
 
@@ -76,6 +111,7 @@ class VideoStreamInference:
         self.snippet_length = snippet_length
         self.snippet_stride = snippet_stride
         self.ema_alpha = ema_alpha
+        self.is_cancelled = False
 
         if device == "auto":
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -131,6 +167,25 @@ class VideoStreamInference:
             theta_base=0.25,
         )
 
+    def cancel(self):
+        """Signals active streaming generator to stop processing immediately."""
+        self.is_cancelled = True
+        logger.info("Cancellation flag set for VideoStreamInference.")
+
+    def update_parameters(
+        self,
+        ema_alpha: float = 0.25,
+        threshold_high: float = 0.60,
+        threshold_low: float = 0.40,
+        min_persistence_sec: float = 1.5,
+    ):
+        """Dynamically adjusts postprocessing thresholds without reloading models."""
+        self.ema_alpha = ema_alpha
+        self.threshold_high = threshold_high
+        self.threshold_low = threshold_low
+        self.min_persistence_sec = min_persistence_sec
+
+
     def process_video_stream(
         self,
         video_path: Union[str, Path],
@@ -151,7 +206,13 @@ class VideoStreamInference:
         if not cap.isOpened():
             raise ValueError(f"Unable to open video file with OpenCV: {video_file}")
 
+        self.is_cancelled = False
+
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        if total_frames <= 0:
+            cap.release()
+            raise ValueError(f"Corrupt video file: zero decodable frames in {video_file.name}")
+
         fps = float(cap.get(cv2.CAP_PROP_FPS))
         if fps <= 0 or np.isnan(fps):
             fps = 30.0  # Robust default for CCTV with missing header FPS
@@ -182,71 +243,132 @@ class VideoStreamInference:
             f"Frames: {total_frames} | FPS: {fps:.1f} | Duration: {total_duration_sec:.1f}s"
         )
 
-        while True:
-            ret, frame_bgr = cap.read()
-            if not ret:
-                break
+        try:
+            while True:
+                if self.is_cancelled:
+                    logger.info("Inference loop cancelled by user signal.")
+                    break
 
-            frames_processed += 1
-            # Convert BGR (OpenCV) to RGB (PIL)
-            frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-            pil_img = Image.fromarray(frame_rgb)
-            frame_tensor = self.transform(pil_img)  # (3, 224, 224)
-            frame_buffer.append(frame_tensor)
+                ret, frame_bgr = cap.read()
+                if not ret:
+                    break
 
-            # Once rolling buffer reaches snippet length (16 frames)
-            if len(frame_buffer) == self.snippet_length:
+                frames_processed += 1
+                # Convert BGR (OpenCV) to RGB (PIL)
+                frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+                pil_img = Image.fromarray(frame_rgb)
+                frame_tensor = self.transform(pil_img)  # (3, 224, 224)
+                frame_buffer.append(frame_tensor)
+
+                # Once rolling buffer reaches snippet length (16 frames)
+                if len(frame_buffer) == self.snippet_length:
+                    t0 = time.perf_counter()
+
+                    # 1. Format as (1, 3, 16, 224, 224)
+                    clip = torch.stack(frame_buffer, dim=1).unsqueeze(0).to(self.device)
+
+                    # 2. Extract S3D feature representation (1, 1024)
+                    with torch.inference_mode():
+                        feat = self.backbone(clip)
+                        if isinstance(feat, tuple):
+                            feat = feat[0]
+                        features_list.append(feat.squeeze(0))  # (1024,)
+
+                        # 3. Run Causal TCN on all accumulated features (1, T, 1024)
+                        full_feat_seq = torch.stack(features_list, dim=0).unsqueeze(0)
+                        scores_seq = self.model(full_feat_seq).squeeze(0)  # (T,)
+                        raw_score = float(scores_seq[-1].item())
+
+                    model_latency_ms = (time.perf_counter() - t0) * 1000.0
+
+                    # 4. Online Causal EMA Smoothing
+                    if len(smooth_scores_history) == 0:
+                        smooth_score = raw_score
+                    else:
+                        smooth_score = self.ema_alpha * raw_score + (1.0 - self.ema_alpha) * smooth_scores_history[-1]
+
+                    current_timestamp = frames_processed / fps
+                    raw_scores_history.append(raw_score)
+                    smooth_scores_history.append(smooth_score)
+                    timestamps_history.append(current_timestamp)
+
+                    # 5. Form Events up to current snippet
+                    active_events = event_engine.form_events(np.array(smooth_scores_history))
+
+                    # 6. Assess Operational Risk
+                    current_peak = max(smooth_scores_history) if smooth_scores_history else 0.0
+                    current_risk = self.risk_layer.assess_video(active_events, overall_peak_score=current_peak)
+
+                    elapsed_total = time.perf_counter() - overall_start_time
+                    processing_fps = frames_processed / max(0.001, elapsed_total)
+
+                    # Status Banner
+                    if current_risk.risk_level == "High Risk":
+                        status_banner = "HIGH RISK ANOMALY"
+                    elif current_risk.risk_level == "Medium Risk":
+                        status_banner = "MEDIUM RISK ANOMALY"
+                    elif current_risk.risk_level == "Low Risk":
+                        status_banner = "LOW RISK ANOMALY"
+                    else:
+                        status_banner = "NORMAL"
+
+                    # 7. Yield progressive update
+                    yield StreamUpdate(
+                        snippet_idx=snippet_idx,
+                        video_timestamp_sec=current_timestamp,
+                        total_duration_sec=total_duration_sec,
+                        current_raw_score=raw_score,
+                        current_smooth_score=smooth_score,
+                        scores_history=list(raw_scores_history),
+                        smoothed_history=list(smooth_scores_history),
+                        timestamps_history=list(timestamps_history),
+                        active_events=active_events,
+                        current_risk=current_risk,
+                        processing_fps=processing_fps,
+                        model_latency_ms=model_latency_ms,
+                        frames_processed=frames_processed,
+                        total_frames=total_frames,
+                        is_complete=False,
+                        status_banner=status_banner,
+                    )
+
+                    snippet_idx += 1
+
+                    # Slide buffer by stride
+                    if self.snippet_stride < self.snippet_length:
+                        frame_buffer = frame_buffer[self.snippet_stride:]
+                    else:
+                        frame_buffer = []
+
+            # Handle leftover frames (< 16) at end of video if no snippets were formed yet
+            if len(frame_buffer) > 0 and snippet_idx == 0 and not self.is_cancelled:
+                # Video has fewer than 16 frames total: pad with last frame to enable inference
+                while len(frame_buffer) < self.snippet_length:
+                    frame_buffer.append(frame_buffer[-1])
+
                 t0 = time.perf_counter()
-
-                # 1. Format as (1, 3, 16, 224, 224)
                 clip = torch.stack(frame_buffer, dim=1).unsqueeze(0).to(self.device)
-
-                # 2. Extract S3D feature representation (1, 1024)
-                with torch.no_grad():
+                with torch.inference_mode():
                     feat = self.backbone(clip)
                     if isinstance(feat, tuple):
                         feat = feat[0]
-                    features_list.append(feat.squeeze(0))  # (1024,)
-
-                    # 3. Run Causal TCN on all accumulated features (1, T, 1024)
+                    features_list.append(feat.squeeze(0))
                     full_feat_seq = torch.stack(features_list, dim=0).unsqueeze(0)
-                    scores_seq = self.model(full_feat_seq).squeeze(0)  # (T,)
+                    scores_seq = self.model(full_feat_seq).squeeze(0)
                     raw_score = float(scores_seq[-1].item())
-
                 model_latency_ms = (time.perf_counter() - t0) * 1000.0
 
-                # 4. Online Causal EMA Smoothing
-                if len(smooth_scores_history) == 0:
-                    smooth_score = raw_score
-                else:
-                    smooth_score = self.ema_alpha * raw_score + (1.0 - self.ema_alpha) * smooth_scores_history[-1]
-
-                current_timestamp = frames_processed / fps
+                smooth_score = raw_score
+                current_timestamp = total_duration_sec
                 raw_scores_history.append(raw_score)
                 smooth_scores_history.append(smooth_score)
                 timestamps_history.append(current_timestamp)
 
-                # 5. Form Events up to current snippet
                 active_events = event_engine.form_events(np.array(smooth_scores_history))
-
-                # 6. Assess Operational Risk
-                current_peak = max(smooth_scores_history) if smooth_scores_history else 0.0
-                current_risk = self.risk_layer.assess_video(active_events, overall_peak_score=current_peak)
-
+                current_risk = self.risk_layer.assess_video(active_events, overall_peak_score=smooth_score)
                 elapsed_total = time.perf_counter() - overall_start_time
                 processing_fps = frames_processed / max(0.001, elapsed_total)
 
-                # Status Banner
-                if current_risk.risk_level == "High Risk":
-                    status_banner = "HIGH RISK ANOMALY"
-                elif current_risk.risk_level == "Medium Risk":
-                    status_banner = "MEDIUM RISK ANOMALY"
-                elif current_risk.risk_level == "Low Risk":
-                    status_banner = "LOW RISK ANOMALY"
-                else:
-                    status_banner = "NORMAL"
-
-                # 7. Yield progressive update
                 yield StreamUpdate(
                     snippet_idx=snippet_idx,
                     video_timestamp_sec=current_timestamp,
@@ -262,70 +384,38 @@ class VideoStreamInference:
                     model_latency_ms=model_latency_ms,
                     frames_processed=frames_processed,
                     total_frames=total_frames,
-                    is_complete=False,
-                    status_banner=status_banner,
+                    is_complete=True,
+                    status_banner="NORMAL" if current_risk.risk_level == "Normal" else f"{current_risk.risk_level.upper()} ANOMALY",
                 )
 
-                snippet_idx += 1
+        finally:
+            cap.release()
 
-                # Slide buffer by stride
-                if self.snippet_stride < self.snippet_length:
-                    frame_buffer = frame_buffer[self.snippet_stride:]
-                else:
-                    frame_buffer = []
-
-        # Handle leftover frames (< 16) at end of video
-        if len(frame_buffer) > 0 and snippet_idx == 0:
-            # Video has fewer than 16 frames total: pad with last frame to enable inference
-            while len(frame_buffer) < self.snippet_length:
-                frame_buffer.append(frame_buffer[-1])
-
-            t0 = time.perf_counter()
-            clip = torch.stack(frame_buffer, dim=1).unsqueeze(0).to(self.device)
-            with torch.no_grad():
-                feat = self.backbone(clip)
-                if isinstance(feat, tuple):
-                    feat = feat[0]
-                features_list.append(feat.squeeze(0))
-                full_feat_seq = torch.stack(features_list, dim=0).unsqueeze(0)
-                scores_seq = self.model(full_feat_seq).squeeze(0)
-                raw_score = float(scores_seq[-1].item())
-            model_latency_ms = (time.perf_counter() - t0) * 1000.0
-
-            smooth_score = raw_score
-            current_timestamp = total_duration_sec
-            raw_scores_history.append(raw_score)
-            smooth_scores_history.append(smooth_score)
-            timestamps_history.append(current_timestamp)
-
-            active_events = event_engine.form_events(np.array(smooth_scores_history))
-            current_risk = self.risk_layer.assess_video(active_events, overall_peak_score=smooth_score)
-            elapsed_total = time.perf_counter() - overall_start_time
-            processing_fps = frames_processed / max(0.001, elapsed_total)
-
+        # Emit final completed or cancelled state
+        if self.is_cancelled:
+            logger.info(f"Emitting cancelled final update for: {video_file.name}")
+            final_peak = max(smooth_scores_history) if smooth_scores_history else 0.0
+            final_events = event_engine.form_events(np.array(smooth_scores_history)) if smooth_scores_history else []
+            final_risk = self.risk_layer.assess_video(final_events, overall_peak_score=final_peak)
             yield StreamUpdate(
-                snippet_idx=snippet_idx,
-                video_timestamp_sec=current_timestamp,
+                snippet_idx=max(0, len(raw_scores_history) - 1),
+                video_timestamp_sec=timestamps_history[-1] if timestamps_history else 0.0,
                 total_duration_sec=total_duration_sec,
-                current_raw_score=raw_score,
-                current_smooth_score=smooth_score,
+                current_raw_score=raw_scores_history[-1] if raw_scores_history else 0.0,
+                current_smooth_score=smooth_scores_history[-1] if smooth_scores_history else 0.0,
                 scores_history=list(raw_scores_history),
                 smoothed_history=list(smooth_scores_history),
                 timestamps_history=list(timestamps_history),
-                active_events=active_events,
-                current_risk=current_risk,
-                processing_fps=processing_fps,
-                model_latency_ms=model_latency_ms,
+                active_events=final_events,
+                current_risk=final_risk,
+                processing_fps=0.0,
+                model_latency_ms=0.0,
                 frames_processed=frames_processed,
                 total_frames=total_frames,
                 is_complete=True,
-                status_banner="NORMAL" if current_risk.risk_level == "Normal" else f"{current_risk.risk_level.upper()} ANOMALY",
+                status_banner="CANCELLED",
             )
-
-        cap.release()
-
-        # Emit final completed state
-        if len(raw_scores_history) > 0:
+        elif len(raw_scores_history) > 0:
             final_peak = max(smooth_scores_history) if smooth_scores_history else 0.0
             final_events = event_engine.form_events(np.array(smooth_scores_history))
             final_risk = self.risk_layer.assess_video(final_events, overall_peak_score=final_peak)
@@ -352,3 +442,4 @@ class VideoStreamInference:
                 is_complete=True,
                 status_banner=status_banner,
             )
+
