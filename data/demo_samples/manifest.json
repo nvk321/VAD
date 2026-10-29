@@ -1,0 +1,44 @@
+{
+  "Robbery037.mp4": {
+    "source": "UCF-Crime",
+    "category": "Robbery",
+    "label": 1,
+    "description": "Armed commercial robbery incident",
+    "frames": 873,
+    "width": 320,
+    "height": 320,
+    "fps": 30.0,
+    "duration_sec": 29.1,
+    "codec": "H.264 (libx264, yuv420p)",
+    "size_bytes": 1395957,
+    "sha256": "6a49ccd15b87aad6f6bcc61cab87250cb6b41fc91f4b1c406bb12e82ad745d06"
+  },
+  "Normal_Videos008.mp4": {
+    "source": "UCF-Crime",
+    "category": "NormalVideos",
+    "label": 0,
+    "description": "Calm urban street surveillance",
+    "frames": 257,
+    "width": 320,
+    "height": 320,
+    "fps": 30.0,
+    "duration_sec": 8.57,
+    "codec": "H.264 (libx264, yuv420p)",
+    "size_bytes": 787220,
+    "sha256": "472d4874f79b4623ea7e9419c2d3f414c7ef636430d8ede3eb70b4a07bcfe8d8"
+  },
+  "Arson015.mp4": {
+    "source": "UCF-Crime",
+    "category": "Arson",
+    "label": 1,
+    "description": "Structure fire and arson incident",
+    "frames": 1023,
+    "width": 320,
+    "height": 320,
+    "fps": 30.0,
+    "duration_sec": 34.1,
+    "codec": "H.264 (libx264, yuv420p)",
+    "size_bytes": 1651739,
+    "sha256": "3c4e4c3bc7f219f72cb5c13e44b5aed3eaa477c402b8ab5cb672be3854176785"
+  }
+}
