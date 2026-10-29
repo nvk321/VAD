@@ -13,6 +13,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.0.0] - 2026-10-29 — Phase 9: Demo Stabilization, Multi-Run Isolation & Production Polish
+
+### Fixed & Stabilized
+- **Robbery037 Ground Truth Anomaly Discrepancy**:
+  - Identified that previous synthetic generator truncated video at 400 frames (before the armed robbery occurred at frames 528–640).
+  - Regenerated full 873 frames (29.1s) from source archive; model achieves peak raw anomaly 0.9972 and triggers High Risk alert dynamically.
+- **HTML5 Browser Video Playback Bug (`0:00 / NaN:NaN`)**:
+  - Replaced unsupported OpenCV `mp4v` codec with bundled FFmpeg 7.1 (`imageio-ffmpeg`).
+  - Encoded all browser-facing output videos with `libx264`, `yuv420p`, and `-movflags +faststart` to place `moov` atom at front of stream, enabling instant HTML5 player seek and duration calculation.
+- **Model Lifecycle & GPU Residency Singleton**:
+  - Replaced per-run model reinitialization with `get_streaming_inference_engine()` singleton.
+  - S3D backbone and TCN weights load once into GPU memory (~37.3 MB) and are safely reused across consecutive runs.
+- **Per-Run Directory Isolation & Manifest Generation**:
+  - Replaced flat output dumping with timestamped, collision-free run directories: `outputs/demo/YYYYMMDD_HHMMSS_<slug>_<hash>/`.
+  - Subdirectories created for `input/`, `annotated/`, `clean/`, `scores/`, `plots/`, `reports/`, and `telemetry/`.
+  - Structured reproducibility manifest `run.json` automatically generated for every session.
+- **Mid-Stream Cancellation & Connection Reset**:
+  - Added clean generator interrupt (`cancel()` method) and handled `(GeneratorExit, ConnectionResetError)` gracefully to prevent Windows `WinError 10054` terminal crashes.
+- **Matplotlib Memory Leak**:
+  - Added `plt.close("all")` in dynamic timeline rendering to eliminate `figure.max_open_warning` across streaming steps.
+
+### Added
+- **Parity Diagnostic Utility** (`scripts/diagnose_raw_vs_cached.py`):
+  - Verified numerical and trajectory consistency between raw video pipeline and quarantined research feature cache (Mean Cosine Similarity: 0.9749 across all 54 snippets).
+- **Automated QA & Regression Test Suite** (`scripts/test_demo_application.py`):
+  - Headless test suite testing health check, sample manifest, model singleton, Robbery037 detection, Normal_Videos008 baseline, multi-run isolation, cancellation, and Tab 2 benchmark evaluation (8/8 PASS).
+- **Comprehensive Demo Documentation**:
+  - `docs/DEMO_GUIDE.md`: Full user guide, viva defense reference, scientific boundaries, and troubleshooting.
+  - `docs/DEMO_TEST_MATRIX.md`: 24-point validation matrix across input formats, session isolation, model behavior, UI, and browser playback.
+
+---
+
 ## [0.9.0] - 2026-10-29 — Phase 8: End-to-End Raw Video Streaming, Progressive Demonstration & Operational HUD
 
 ### Added

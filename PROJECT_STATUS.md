@@ -106,6 +106,23 @@
     - **Effective Video Throughput: 123.0 FPS (4.1x real-time surveillance speed)**
     - **Peak VRAM Allocated: 188.5 MB (4.6% budget)**
 
+### Phase 9: Demo Stabilization, Multi-Run Isolation & Automated QA Suite (✅ COMPLETED)
+- **Robbery037 Ground Truth Duration Audit**:
+  - Resolved anomaly truncation bug where old 400-frame slice cut off before the armed robbery. Full 873 frames (29.1s) re-encoded with H.264; model causal peak anomaly reaches 0.9972 with High Risk triage.
+- **Browser Playback & H.264 Encoding**:
+  - Replaced OpenCV `mp4v` codec with bundled FFmpeg 7.1 (`imageio-ffmpeg`), applying `libx264`, `yuv420p`, and `-movflags +faststart` to eliminate HTML5 `0:00 / NaN:NaN` blank screen permanently.
+- **Model Lifecycle & GPU Residency Singleton**:
+  - Created `get_streaming_inference_engine()` ensuring S3D + TCN load once into GPU memory (~37.3 MB) and are safely reused across consecutive uploads without memory leaks.
+- **Multi-Run Isolation & Manifest Generation**:
+  - Every session now outputs to an isolated timestamped directory: `outputs/demo/YYYYMMDD_HHMMSS_<slug>_<hash>/` containing `input/`, `annotated/`, `clean/`, `scores/`, `plots/`, `reports/`, `telemetry/`, and a machine-verifiable `run.json` manifest.
+- **Mid-Stream Cancellation & Windows Reset Handling**:
+  - Added clean `cancel()` flag and graceful `(GeneratorExit, ConnectionResetError)` handling to eliminate `WinError 10054` traceback on client refresh.
+- **Raw-Video vs Cached Feature Parity**:
+  - `scripts/diagnose_raw_vs_cached.py` proves raw video preprocessing matches quarantined research feature cache with **0.9749** mean Cosine Similarity across all 54 snippets.
+- **Automated QA & Demonstration Test Matrix**:
+  - `scripts/test_demo_application.py` automated QA suite verified 8/8 tests pass (100%).
+  - Comprehensive documentation added: `docs/DEMO_GUIDE.md` and `docs/DEMO_TEST_MATRIX.md` (24/24 PASS).
+
 ---
 
 ## 3. Systematic Experimental Comparison Table

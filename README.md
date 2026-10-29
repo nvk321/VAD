@@ -162,7 +162,21 @@ pip install -r requirements.txt
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 ```
 
-### 7.3 Verifying Dataset Archive
+### 7.3 Launching the Interactive Demonstration Web Application
+```powershell
+# Launch the multi-tab Gradio surveillance console
+python app.py
+```
+Open **`http://127.0.0.1:7860`** in your browser.
+
+- **Tab 1: Live Anomaly Detection**: Upload any `.mp4`/`.avi`/`.mov` or select a preset demo (`Robbery037`, `Normal_Videos008`, `Arson015`), toggle operational HUD, view progressive timeline, and download H.264 annotated video.
+- **Tab 2: Benchmark Exploration**: Rapid evaluation of UCF-Crime test set features across 13 crime categories (< 50ms latency).
+- **Tab 3: Research Dashboard**: Ablation tables, ROC/PR curves, and paper-ready comparison artifacts.
+- **Tab 4: Architecture & Viva Guide**: Comprehensive methodology walkthrough, mathematical derivations, and live subsystem health check.
+
+For operational and viva defense details, see [docs/DEMO_GUIDE.md](file:///C:/Projects/VAD/docs/DEMO_GUIDE.md) and [docs/DEMO_TEST_MATRIX.md](file:///C:/Projects/VAD/docs/DEMO_TEST_MATRIX.md).
+
+### 7.4 Verifying Dataset Archive
 ```powershell
 # Verify the integrity of the local UCF-Crime zip archive
 python scripts/data/verify_ucf_crime.py
