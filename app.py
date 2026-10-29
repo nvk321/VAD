@@ -1,21 +1,24 @@
 """Real-Time Video Anomaly Detection & Operational Risk Assessment Application.
 
-Comprehensive Multi-Tab Surveillance and Research System:
+Comprehensive Multi-Tab Surveillance and Research Console:
     Tab 1: 🎥 Live Anomaly Detection (Raw Video Upload, Sequential Processing,
-           Progressive Timeline, Real-Time HUD Overlay, Downloads)
+           Progressive Timeline, Real-Time HUD Overlay, Isolated Run Artifacts)
     Tab 2: 🧪 UCF-Crime Benchmark Examples (Instant evaluation across 13 crime classes)
     Tab 3: 📊 Research & Evaluation Dashboard (Ablations, Metrics, Paper Artifacts)
-    Tab 4: ⚙️ System Architecture & Scientific Methodology (Honest positioning)
+    Tab 4: ⚙️ System Architecture & Scientific Methodology (Honest positioning, Health Check)
 
 Preserves Frozen Architecture & Research Invariants:
-    Frozen S3D Backbone -> Dilated Causal TCN -> Online Causal EMA
+    Frozen S3D Backbone (1024-d) -> Dilated Causal TCN -> Online Causal EMA
     -> Dual-Threshold Hysteresis -> Persistence-Based Event Formation
     -> Transparent Deterministic Risk Decision Layer.
 """
 
 from datetime import datetime
+import hashlib
 import json
+import os
 from pathlib import Path
+import re
 import sys
 import time
 from typing import Dict, Generator, List, Optional, Tuple, Union
@@ -23,7 +26,9 @@ from typing import Dict, Generator, List, Optional, Tuple, Union
 # Ensure project root is on sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import cv2
 import gradio as gr
+import imageio_ffmpeg
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -31,8 +36,16 @@ import numpy as np
 import pandas as pd
 import torch
 
-from src.inference.annotated_video import create_annotated_video
-from src.inference.video_stream import StreamUpdate, VideoStreamInference
+from src.inference.annotated_video import (
+    create_annotated_video,
+    create_clean_video,
+    validate_video_file,
+)
+from src.inference.video_stream import (
+    StreamUpdate,
+    VideoStreamInference,
+    get_streaming_inference_engine,
+)
 from src.models.tcn import TCNModel
 from src.postprocessing.event_formation import AnomalyEvent, EventFormationEngine
 from src.postprocessing.smoothing import exponential_moving_average
@@ -42,8 +55,8 @@ from src.utils.logger import get_logger
 logger = get_logger("app")
 
 # Directories
-OUTPUTS_DIR = Path("outputs/demo")
-OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+BASE_OUTPUTS_DIR = Path("outputs/demo")
+BASE_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 DEMO_SAMPLES_DIR = Path("data/demo_samples")
 FEATURES_DIR = Path("data/features/ucf_crime_s3d")
 PAPER_ARTIFACTS_DIR = Path("experiments/paper_artifacts")
@@ -66,7 +79,7 @@ BENCHMARK_SAMPLES = {
     "[Normal Video] Normal_Videos089 (Normal Retail Store Footage)": "Normal_Videos089_x264",
 }
 
-# Cached Models for Tab 2
+# Cached Model for Tab 2 (Fast feature evaluation)
 _TAB2_MODEL = None
 _TAB2_DEVICE = None
 
@@ -98,6 +111,26 @@ def get_tab2_model(device: str = "auto") -> Tuple[torch.nn.Module, str]:
     return model, dev
 
 
+def sanitize_filename_slug(name: str) -> str:
+    """Creates a deterministic, filesystem-safe slug from arbitrary video filenames."""
+    stem = Path(name).stem
+    slug = re.sub(r"[^\w\-_.]", "_", stem)
+    slug = re.sub(r"_+", "_", slug).strip("_")
+    return slug[:40] if slug else "video"
+
+
+def compute_sha256(filepath: Path) -> str:
+    """Computes SHA-256 hash of a file."""
+    h = hashlib.sha256()
+    try:
+        with open(filepath, "rb") as f:
+            while chunk := f.read(65536):
+                h.update(chunk)
+        return h.hexdigest()
+    except Exception:
+        return "unknown"
+
+
 # ==============================================================================
 # TAB 1: Progressive Raw Video Inference Logic
 # ==============================================================================
@@ -113,6 +146,7 @@ def render_live_plot(
     total_duration_sec: float = 1.0,
 ):
     """Draw dynamic timeline plot that grows progressively as video is processed."""
+    plt.close("all")
     fig, ax = plt.subplots(figsize=(10, 4.2), dpi=180)
 
     t_arr = np.array(timestamps) if timestamps else np.array([0.0])
@@ -148,53 +182,78 @@ def render_live_plot(
     ax.set_xlabel("Video Time (seconds)", fontsize=10, fontweight="bold")
     ax.set_ylabel("Continuous Anomaly Score", fontsize=10, fontweight="bold")
     ax.set_ylim(-0.05, 1.1)
-    max_x = max(1.0, total_duration_sec, current_time_sec)
-    ax.set_xlim(0, max_x)
+    ax.set_xlim(-0.5, max(1.0, total_duration_sec, current_time_sec + 0.5))
     ax.grid(True, linestyle="--", alpha=0.45)
     ax.legend(loc="upper right", framealpha=0.92, fontsize=8.5)
-    plt.tight_layout()
+    fig.tight_layout()
     return fig
 
 
-def format_status_card(update: StreamUpdate) -> str:
-    """Generate modern, rich HTML operational triage alert card."""
-    risk_level = update.current_risk.risk_level if update.current_risk else "Normal"
-    risk_score = update.current_risk.risk_score if update.current_risk else 0.0
-    explanation = update.current_risk.explanation if update.current_risk else "Processing surveillance stream..."
+def format_status_card(update: StreamUpdate, is_arbitrary: bool = True) -> str:
+    """Formats a modern, high-contrast operational status HUD card."""
+    risk = update.current_risk
+    level = risk.risk_level if risk else "Normal"
+    score = risk.risk_score if risk else 0.0
 
-    styles = {
+    color_palette = {
         "High Risk": ("#e03131", "#fff5f5", "🔴 HIGH RISK INCIDENT"),
         "Medium Risk": ("#f08c00", "#fff9db", "🟠 MEDIUM RISK ANOMALY"),
-        "Low Risk": ("#1971c2", "#e7f5ff", "🔵 LOW RISK NOTICE"),
+        "Low Risk": ("#1971c2", "#e7f5ff", "🔵 LOW RISK ANOMALY"),
         "Normal": ("#2b8a3e", "#ebfbee", "🟢 NORMAL SURVEILLANCE"),
     }
-    color, bg, header_text = styles.get(risk_level, ("#495057", "#f8f9fa", "SURVEILLANCE ACTIVE"))
+    badge_color, bg_color, header_text = color_palette.get(level, ("#495057", "#f8f9fa", "⚪ STATUS"))
+
+    gt_badge = "<span style='background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;'>Ground Truth: UNKNOWN (Upload)</span>" if is_arbitrary else "<span style='background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;'>Benchmark Sample</span>"
 
     return f"""
-    <div style='background-color: {bg}; border: 2px solid {color}; border-radius: 12px; padding: 16px; margin-bottom: 8px;'>
+    <div style='background-color: {bg_color}; border: 2px solid {badge_color}; border-radius: 12px; padding: 16px; margin-bottom: 8px;'>
         <div style='display: flex; justify-content: space-between; align-items: center;'>
             <div>
                 <span style='font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #555;'>Operational Triage Decision</span>
-                <h2 style='margin: 3px 0 0 0; color: {color}; font-size: 24px; font-weight: 900;'>{header_text}</h2>
+                <h2 style='margin: 4px 0 0 0; color: {badge_color}; font-size: 24px; font-weight: 900;'>{header_text}</h2>
             </div>
             <div style='text-align: right;'>
-                <span style='font-size: 11px; color: #666;'>Risk Metric R</span>
-                <div style='font-size: 28px; font-weight: 900; color: #111;'>{risk_score:.3f}</div>
+                <span style='font-size: 11px; color: #666;'>Risk Score R ∈ [0, 1]</span>
+                <div style='font-size: 28px; font-weight: 900; color: #111;'>{score:.3f}</div>
             </div>
         </div>
         <p style='margin: 10px 0 6px 0; font-size: 13.5px; line-height: 1.45; color: #333;'>
-            <strong>Decision Breakdown:</strong> {explanation}
+            <strong>Operational Assessment:</strong> {risk.explanation if risk else 'Evaluating continuous frame sequence...'}
         </p>
-        <div style='display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: #555; margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd;'>
+        <div style='display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #555; margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd;'>
             <span><strong>Current Score:</strong> {update.current_raw_score:.3f}</span>
-            <span><strong>Smoothed EMA:</strong> {update.current_smooth_score:.3f}</span>
-            <span><strong>Video Time:</strong> {update.video_timestamp_sec:.1f} / {update.total_duration_sec:.1f} s</span>
+            <span><strong>EMA Smoothed:</strong> {update.current_smooth_score:.3f}</span>
+            <span><strong>Active Events:</strong> {len(update.active_events)}</span>
+            <span><strong>Video Time:</strong> {update.video_timestamp_sec:.1f} / {update.total_duration_sec:.1f}s</span>
             <span><strong>Processing Speed:</strong> {update.processing_fps:.1f} FPS</span>
-            <span><strong>Model Latency:</strong> {update.model_latency_ms:.1f} ms</span>
-            <span><strong>Detected Incidents:</strong> {len(update.active_events)}</span>
+            {gt_badge}
         </div>
     </div>
     """
+
+
+def stop_streaming_detection():
+    """Stops currently executing streaming detection run."""
+    engine = get_streaming_inference_engine()
+    engine.cancel()
+    return "Detection stop signal sent."
+
+
+def reset_application_session():
+    """Resets UI components to their initial clean states."""
+    idle_html = "<div style='padding: 16px; border: 2px dashed #bbb; border-radius: 12px; text-align: center; color: #777;'>Upload a video or select a preset, then click <strong>'START ANOMALY DETECTION'</strong>.</div>"
+    empty_df = pd.DataFrame(columns=["Event ID", "Start (s)", "End (s)", "Duration", "Peak Anomaly", "Mean Anomaly", "Risk Score", "Operational Tier"])
+    return (
+        None,             # video_input
+        "Robbery037",     # preset_dropdown
+        True,             # overlay_toggle
+        idle_html,        # status_card
+        None,             # timeline_plot
+        empty_df,         # events_table
+        "System Ready. Model cached in GPU memory.", # telemetry_box
+        None,             # video_output_display
+        None, None, None, None, None, None, None,  # download files
+    )
 
 
 def run_streaming_detection(
@@ -207,143 +266,198 @@ def run_streaming_detection(
     min_persistence: float = 1.5,
     max_gap: float = 1.2,
 ) -> Generator[Tuple, None, None]:
-    """Progressive streaming inference pipeline with live UI yield."""
-    # 1. Determine video path
+    """Progressive streaming inference pipeline with full run isolation."""
+    # 1. Video Selection Precedence Rule:
+    # Explicit custom upload ALWAYS takes precedence over preset dropdown
+    is_arbitrary_upload = True
     if uploaded_video_file is not None and Path(uploaded_video_file).is_file():
         video_path = Path(uploaded_video_file)
+        is_arbitrary_upload = True
     elif preset_choice != "Custom Upload" and (DEMO_SAMPLES_DIR / f"{preset_choice}.mp4").is_file():
         video_path = DEMO_SAMPLES_DIR / f"{preset_choice}.mp4"
+        is_arbitrary_upload = False
     else:
-        # Default fallback to Robbery037 demo video
         video_path = DEMO_SAMPLES_DIR / "Robbery037.mp4"
+        is_arbitrary_upload = False
 
-    if not video_path.is_file():
-        err_card = f"<div style='color: red; padding: 12px;'>Error: Video file not found: {video_path}</div>"
+    # Validate file existence and readability
+    is_valid, duration_sec, val_err = validate_video_file(video_path)
+    if not is_valid:
+        err_card = f"<div style='color: #c92a2a; background: #fff5f5; border: 2px solid #e03131; border-radius: 10px; padding: 14px;'><strong>Detection Error:</strong> {val_err}</div>"
         yield (
             err_card,
             None,
             pd.DataFrame(),
-            "Error: Video file missing",
-            str(video_path),
-            None, None, None, None,
+            f"Error validating input video: {val_err}",
+            None,
+            None, None, None, None, None, None, None,
         )
         return
 
-    # 2. Instantiate Streaming Engine
-    streamer = VideoStreamInference(
-        checkpoint_path="experiments/exp_B_tcn/checkpoints/best_auc.pt",
-        backbone_type="s3d",
+    # 2. Initialize Isolated Run Directory
+    run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    video_slug = sanitize_filename_slug(video_path.name)
+    run_hash = hashlib.md5(f"{video_path.name}_{run_timestamp}".encode()).hexdigest()[:6]
+    run_id = f"{run_timestamp}_{video_slug}_{run_hash}"
+    run_dir = BASE_OUTPUTS_DIR / run_id
+
+    dir_input = run_dir / "input"
+    dir_annotated = run_dir / "annotated"
+    dir_clean = run_dir / "clean"
+    dir_scores = run_dir / "scores"
+    dir_plots = run_dir / "plots"
+    dir_reports = run_dir / "reports"
+    dir_telemetry = run_dir / "telemetry"
+
+    for d in [dir_input, dir_annotated, dir_clean, dir_scores, dir_plots, dir_reports, dir_telemetry]:
+        d.mkdir(parents=True, exist_ok=True)
+
+    # 3. Retrieve Cached Inference Engine (Loaded Once)
+    engine = get_streaming_inference_engine(
         device="auto",
-        snippet_length=16,
-        snippet_stride=16,
         ema_alpha=ema_alpha,
         threshold_high=threshold_high,
         threshold_low=threshold_low,
         min_persistence_sec=min_persistence,
-        max_gap_sec=max_gap,
     )
 
     last_update = None
-    video_stem = video_path.stem
+    scores_history_live = []
+    smooth_history_live = []
+    timestamps_live = []
 
-    for update in streamer.process_video_stream(video_path):
-        last_update = update
+    try:
+        for update in engine.process_video_stream(video_path):
+            last_update = update
+            scores_history_live = update.scores_history
+            smooth_history_live = update.smoothed_history
+            timestamps_live = update.timestamps_history
 
-        status_html = format_status_card(update)
-        fig = render_live_plot(
-            timestamps=update.timestamps_history,
-            raw_scores=update.scores_history,
-            smooth_scores=update.smoothed_history,
-            events=update.active_events,
-            threshold_high=threshold_high,
-            threshold_low=threshold_low,
-            current_time_sec=update.video_timestamp_sec,
-            total_duration_sec=update.total_duration_sec,
-        )
+            status_html = format_status_card(update, is_arbitrary=is_arbitrary_upload)
+            fig = render_live_plot(
+                timestamps=update.timestamps_history,
+                raw_scores=update.scores_history,
+                smooth_scores=update.smoothed_history,
+                events=update.active_events,
+                threshold_high=threshold_high,
+                threshold_low=threshold_low,
+                current_time_sec=update.video_timestamp_sec,
+                total_duration_sec=update.total_duration_sec,
+            )
 
-        # Form events table
-        if update.active_events:
-            table_rows = []
-            for e in update.active_events:
-                ev_risk = streamer.risk_layer.assess_event(e)
-                table_rows.append({
-                    "Event ID": f"Event {e.event_id}",
-                    "Start (s)": f"{e.start_sec:.1f}s",
-                    "End (s)": f"{e.end_sec:.1f}s",
-                    "Duration": f"{e.duration_sec:.1f}s",
-                    "Peak Anomaly": f"{e.peak_score:.3f}",
-                    "Mean Anomaly": f"{e.mean_score:.3f}",
-                    "Risk Score": f"{ev_risk.risk_score:.3f}",
-                    "Operational Tier": ev_risk.risk_level,
-                })
-            events_df = pd.DataFrame(table_rows)
-        else:
-            events_df = pd.DataFrame([{
-                "Event ID": "-",
-                "Start (s)": "-",
-                "End (s)": "-",
-                "Duration": "0.0s",
-                "Peak Anomaly": f"{update.current_smooth_score:.3f}",
-                "Mean Anomaly": "-",
-                "Risk Score": f"{update.current_risk.risk_score:.3f}" if update.current_risk else "0.000",
-                "Operational Tier": "Normal (No Events)",
-            }])
+            # Format Events Table
+            if update.active_events:
+                table_rows = []
+                for e in update.active_events:
+                    ev_risk = engine.risk_layer.assess_event(e)
+                    table_rows.append({
+                        "Event ID": f"Event {e.event_id}",
+                        "Start (s)": f"{e.start_sec:.1f}s",
+                        "End (s)": f"{e.end_sec:.1f}s",
+                        "Duration": f"{e.duration_sec:.1f}s",
+                        "Peak Anomaly": f"{e.peak_score:.3f}",
+                        "Mean Anomaly": f"{e.mean_score:.3f}",
+                        "Risk Score": f"{ev_risk.risk_score:.3f}",
+                        "Operational Tier": ev_risk.risk_level,
+                    })
+                events_df = pd.DataFrame(table_rows)
+            else:
+                events_df = pd.DataFrame([{
+                    "Event ID": "-",
+                    "Start (s)": "-",
+                    "End (s)": "-",
+                    "Duration": "0.0s",
+                    "Peak Anomaly": f"{update.current_smooth_score:.3f}",
+                    "Mean Anomaly": "-",
+                    "Risk Score": f"{update.current_risk.risk_score:.3f}" if update.current_risk else "0.000",
+                    "Operational Tier": "Normal (No Events)",
+                }])
 
-        telemetry_text = (
-            f"Frame Processing: {update.frames_processed} / {update.total_frames} frames "
-            f"({(update.frames_processed / max(1, update.total_frames)) * 100:.1f}%)\n"
-            f"Video Time: {update.video_timestamp_sec:.2f} s / {update.total_duration_sec:.2f} s\n"
-            f"Processing Throughput: {update.processing_fps:.1f} FPS | Model Latency: {update.model_latency_ms:.2f} ms\n"
-            f"Hardware Device: {streamer.device.upper()} (NVIDIA RTX 3050 Laptop GPU)\n"
-            f"Architecture: Frozen S3D Backbone (1024-d) + Dilated Causal TCN (Zero Future Leakage)"
-        )
+            progress_pct = (update.frames_processed / max(1, update.total_frames)) * 100.0
+            rt_factor = (update.processing_fps / 30.0)
+            telemetry_text = (
+                f"Status: {update.status_banner} ({progress_pct:.1f}% complete)\n"
+                f"Video Time: {update.video_timestamp_sec:.2f}s / {update.total_duration_sec:.2f}s | "
+                f"Frames: {update.frames_processed} / {update.total_frames}\n"
+                f"Throughput: {update.processing_fps:.1f} FPS (Real-Time Factor: {rt_factor:.2f}x) | Latency: {update.model_latency_ms:.1f} ms\n"
+                f"Device: {engine.device.upper()} | Model: Frozen S3D (1024-d) + Dilated Causal TCN\n"
+                f"Active Run ID: {run_id}"
+            )
 
-        # In live streaming, yield display without blocking for full video write
+            # Yield display update without blocking
+            yield (
+                status_html,
+                fig,
+                events_df,
+                telemetry_text,
+                str(video_path),
+                None, None, None, None, None, None, None,
+            )
+
+            if update.is_complete:
+                break
+
+    except (GeneratorExit, ConnectionResetError) as e:
+        logger.warning(f"Streaming generator cancelled by client/UI: {e}")
+        engine.cancel()
+        return
+
+    except Exception as e:
+        logger.error(f"Inference failure: {e}", exc_info=True)
+        err_card = f"<div style='color: #c92a2a; background: #fff5f5; border: 2px solid #e03131; border-radius: 10px; padding: 14px;'><strong>Detection Error:</strong> {e}<br><small>Run ID: {run_id}</small></div>"
         yield (
-            status_html,
-            fig,
-            events_df,
-            telemetry_text,
-            str(video_path),
-            None, None, None, None,
+            err_card,
+            None,
+            pd.DataFrame(),
+            f"Detection failed. Reason: {e}\nRun ID: {run_id}",
+            None,
+            None, None, None, None, None, None, None,
         )
+        return
 
-    # 3. Post-Processing & Downloadable Artifact Generation (Once inference finishes)
+    # 4. Finalization & Artifact Generation (Isolated Run)
     if last_update is not None:
-        run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        run_dir = OUTPUTS_DIR / f"{video_stem}_{run_timestamp}"
-        run_dir.mkdir(parents=True, exist_ok=True)
+        is_cancelled = last_update.status_banner == "CANCELLED"
 
-        # 3A. Save Timeline Plot
-        plot_path = run_dir / f"timeline_{video_stem}.png"
+        # 4A. Clean Video (Guaranteed H.264 HTML5 Playable)
+        clean_video_path = dir_clean / f"{video_slug}_clean.mp4"
+        create_clean_video(video_path, clean_video_path)
+
+        # 4B. Save High-Res Timeline Plot
+        plot_path = dir_plots / "timeline.png"
         fig.savefig(plot_path, dpi=250)
         plt.close(fig)
 
-        # 3B. Save Anomaly Scores CSV
+        # 4C. Save Anomaly Scores CSV
         scores_df = pd.DataFrame({
-            "snippet_idx": np.arange(len(last_update.scores_history)),
-            "timestamp_sec": last_update.timestamps_history,
-            "raw_anomaly_score": last_update.scores_history,
-            "smoothed_anomaly_score": last_update.smoothed_history,
+            "snippet_idx": np.arange(len(scores_history_live)),
+            "timestamp_seconds": timestamps_live,
+            "raw_score": scores_history_live,
+            "smoothed_score": smooth_history_live,
         })
-        scores_csv_path = run_dir / f"{video_stem}_scores.csv"
+        scores_csv_path = dir_scores / "scores.csv"
         scores_df.to_csv(scores_csv_path, index=False)
 
-        # 3C. Save Incident Report CSV
-        events_csv_path = run_dir / f"{video_stem}_incidents.csv"
+        # 4D. Save Incident Report CSV
+        events_csv_path = dir_scores / "incidents.csv"
         events_df.to_csv(events_csv_path, index=False)
 
-        # 3D. Save Full JSON Summary
+        # 4E. Save Machine-Readable Summary JSON
         summary_data = {
-            "video_identifier": video_stem,
+            "run_id": run_id,
+            "video_identifier": video_path.name,
+            "is_arbitrary_upload": is_arbitrary_upload,
+            "ground_truth": "UNKNOWN" if is_arbitrary_upload else "Benchmark",
             "total_duration_sec": last_update.total_duration_sec,
             "total_frames": last_update.total_frames,
             "processing_fps": last_update.processing_fps,
-            "peak_anomaly_score": max(last_update.smoothed_history) if last_update.smoothed_history else 0.0,
+            "peak_raw_score": max(scores_history_live) if scores_history_live else 0.0,
+            "peak_smoothed_score": max(smooth_history_live) if smooth_history_live else 0.0,
             "overall_risk_level": last_update.current_risk.risk_level if last_update.current_risk else "Normal",
             "overall_risk_score": last_update.current_risk.risk_score if last_update.current_risk else 0.0,
             "risk_explanation": last_update.current_risk.explanation if last_update.current_risk else "",
             "total_events_detected": len(last_update.active_events),
+            "status": "CANCELLED" if is_cancelled else "COMPLETE",
             "events": [
                 {
                     "event_id": e.event_id,
@@ -356,38 +470,81 @@ def run_streaming_detection(
                 for e in last_update.active_events
             ],
         }
-        json_path = run_dir / f"{video_stem}_report.json"
+        json_path = dir_reports / "summary.json"
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(summary_data, f, indent=2)
 
-        # 3E. Render Downloadable Annotated Video if toggle enabled
+        # 4F. Render Annotated H.264 Video if overlay requested
         annotated_video_path = None
-        display_video = str(video_path)
-        if overlay_toggle:
-            annotated_out_path = run_dir / f"{video_stem}_annotated.mp4"
+        playback_video = str(clean_video_path)
+
+        if overlay_toggle and not is_cancelled:
+            annotated_out_path = dir_annotated / f"{video_slug}_annotated.mp4"
             create_annotated_video(
                 input_video_path=video_path,
                 output_video_path=annotated_out_path,
-                timestamps=last_update.timestamps_history,
-                raw_scores=last_update.scores_history,
-                smoothed_scores=last_update.smoothed_history,
+                timestamps=timestamps_live,
+                raw_scores=scores_history_live,
+                smoothed_scores=smooth_history_live,
                 events=last_update.active_events,
-                risk_layer=streamer.risk_layer,
+                risk_layer=engine.risk_layer,
             )
             annotated_video_path = str(annotated_out_path)
-            display_video = str(annotated_out_path)
+            playback_video = str(annotated_out_path)
 
-        # Final yield with download file paths populated
+        # 4G. Full Reproducibility Manifest (run.json)
+        manifest_data = {
+            "run_id": run_id,
+            "timestamp": run_timestamp,
+            "input_filename": video_path.name,
+            "input_sha256": compute_sha256(video_path),
+            "duration_seconds": last_update.total_duration_sec,
+            "fps": 30.0,
+            "frame_count": last_update.total_frames,
+            "backbone": "Frozen S3D (1024-d)",
+            "snippet_size": 16,
+            "checkpoint": str(engine.checkpoint_path),
+            "checkpoint_sha256": compute_sha256(engine.checkpoint_path),
+            "ema_alpha": ema_alpha,
+            "high_threshold": threshold_high,
+            "low_threshold": threshold_low,
+            "persistence_seconds": min_persistence,
+            "ground_truth": "UNKNOWN" if is_arbitrary_upload else "Benchmark",
+            "device": engine.device,
+            "gpu_model": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU",
+            "peak_vram_mb": round(torch.cuda.max_memory_allocated() / (1024**2), 2) if torch.cuda.is_available() else 0.0,
+            "peak_anomaly_score": max(smooth_history_live) if smooth_history_live else 0.0,
+            "risk_score": last_update.current_risk.risk_score if last_update.current_risk else 0.0,
+            "risk_level": last_update.current_risk.risk_level if last_update.current_risk else "Normal",
+            "event_count": len(last_update.active_events),
+            "status": "CANCELLED" if is_cancelled else "COMPLETE",
+        }
+        manifest_path = run_dir / "run.json"
+        with open(manifest_path, "w", encoding="utf-8") as f:
+            json.dump(manifest_data, f, indent=2)
+
+        final_status = "DETECTION CANCELLED" if is_cancelled else "DETECTION COMPLETE"
+        final_telemetry = (
+            f"Execution: {final_status}\n"
+            f"Video Time: {last_update.total_duration_sec:.1f}s | Frames: {last_update.total_frames}\n"
+            f"Average Throughput: {last_update.processing_fps:.1f} FPS | Device: {engine.device.upper()}\n"
+            f"Ground Truth: {'UNKNOWN (Uploaded Video)' if is_arbitrary_upload else 'UCF-Crime Benchmark Sample'}\n"
+            f"Artifacts isolated in: {run_dir}"
+        )
+
         yield (
             status_html,
             fig,
             events_df,
-            telemetry_text + f"\n\nArtifacts saved to run directory: {run_dir}",
-            display_video,
+            final_telemetry,
+            playback_video,
             str(annotated_video_path) if annotated_video_path else None,
+            str(clean_video_path),
             str(scores_csv_path),
             str(events_csv_path),
+            str(plot_path),
             str(json_path),
+            str(manifest_path),
         )
 
 
@@ -422,11 +579,11 @@ def analyze_benchmark_sample(
 
     category = data.get("category", "Unknown")
     ground_truth_label = int(data.get("label", -1))
-    gt_str = "Anomalous" if ground_truth_label == 1 else "Normal" if ground_truth_label == 0 else "Unknown"
+    gt_str = "Anomalous (Label 1)" if ground_truth_label == 1 else "Normal (Label 0)" if ground_truth_label == 0 else "Unknown"
 
     model, device = get_tab2_model()
     t0 = time.perf_counter()
-    with torch.no_grad():
+    with torch.inference_mode():
         feat_gpu = features.unsqueeze(0).to(device)
         raw_scores = model(feat_gpu).squeeze(0).cpu().numpy()
     tcn_ms = (time.perf_counter() - t0) * 1000.0
@@ -453,7 +610,6 @@ def analyze_benchmark_sample(
     overall_peak = float(np.max(smooth_scores)) if len(smooth_scores) > 0 else 0.0
     overall_risk = risk_layer.assess_video(events, overall_peak_score=overall_peak)
 
-    # HTML Card
     color_map = {
         "High Risk": ("#e03131", "#fff5f5"),
         "Medium Risk": ("#f08c00", "#fff9db"),
@@ -466,7 +622,7 @@ def analyze_benchmark_sample(
     <div style='background-color: {bg_color}; border: 2px solid {badge_color}; border-radius: 12px; padding: 16px; margin-bottom: 8px;'>
         <div style='display: flex; justify-content: space-between; align-items: center;'>
             <div>
-                <span style='font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #555;'>Operational Triage Decision</span>
+                <span style='font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #555;'>Benchmark Operational Triage</span>
                 <h2 style='margin: 3px 0 0 0; color: {badge_color}; font-size: 24px; font-weight: 900;'>{overall_risk.risk_level}</h2>
             </div>
             <div style='text-align: right;'>
@@ -478,16 +634,15 @@ def analyze_benchmark_sample(
             <strong>Explainability Breakdown:</strong> {overall_risk.explanation}
         </p>
         <div style='display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: #555; margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd;'>
-            <span><strong>Video:</strong> {video_id}</span>
+            <span><strong>Video ID:</strong> {video_id}</span>
             <span><strong>Category:</strong> {category}</span>
-            <span><strong>Ground Truth:</strong> {gt_str}</span>
+            <span><strong>Dataset Ground Truth:</strong> {gt_str}</span>
             <span><strong>Formed Events:</strong> {len(events)}</span>
-            <span><strong>TCN Latency:</strong> {tcn_ms:.2f} ms</span>
+            <span><strong>Scoring Latency:</strong> {tcn_ms:.2f} ms</span>
         </div>
     </div>
     """
 
-    # Timeline Plot
     timestamps = np.arange(len(raw_scores)) * 0.533
     fig = render_live_plot(
         timestamps=list(timestamps),
@@ -500,7 +655,6 @@ def analyze_benchmark_sample(
         total_duration_sec=float(timestamps[-1]) if len(timestamps) > 0 else 1.0,
     )
 
-    # Table
     if events:
         table_rows = []
         for e in events:
@@ -529,12 +683,75 @@ def analyze_benchmark_sample(
         }])
 
     diagnostics = (
-        f"Sample: {video_id} | Category: {category} | Ground Truth: {gt_str}\n"
-        f"Sequence Length: {len(raw_scores)} snippets ({len(raw_scores)*0.533:.1f} s video duration)\n"
-        f"Inference Latency: {tcn_ms:.2f} ms | Evaluated on: {device.upper()}"
+        f"Benchmark Sample: {video_id} | Category: {category} | Dataset Ground Truth: {gt_str}\n"
+        f"Sequence Length: {len(raw_scores)} snippets ({len(raw_scores)*0.533:.1f}s equivalent video)\n"
+        f"Downstream Scoring Latency: {tcn_ms:.2f} ms | Evaluated on: {device.upper()}\n"
+        f"Note: Evaluated on pre-cached S3D features for rapid research exploration."
     )
 
     return status_html, fig, events_df, diagnostics
+
+
+# ==============================================================================
+# TAB 4: System Health Check Logic
+# ==============================================================================
+
+def check_system_health() -> str:
+    """Generates real-time diagnostic table verifying core system dependencies."""
+    checks = []
+
+    # Checkpoint check
+    ckpt_p = Path("experiments/exp_B_tcn/checkpoints/best_auc.pt")
+    checks.append(("Causal TCN Checkpoint", ckpt_p.is_file(), str(ckpt_p)))
+
+    # CUDA device check
+    has_cuda = torch.cuda.is_available()
+    gpu_name = torch.cuda.get_device_name(0) if has_cuda else "None (CPU only)"
+    checks.append(("CUDA Hardware Acceleration", has_cuda, gpu_name))
+
+    # Bundled FFmpeg check
+    try:
+        ff_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        has_ff = Path(ff_exe).is_file()
+        ff_info = f"Found ({Path(ff_exe).name})"
+    except Exception as e:
+        has_ff = False
+        ff_info = str(e)
+    checks.append(("Bundled H.264 FFmpeg Engine", has_ff, ff_info))
+
+    # Demo sample videos check
+    robbery_p = DEMO_SAMPLES_DIR / "Robbery037.mp4"
+    normal_p = DEMO_SAMPLES_DIR / "Normal_Videos008.mp4"
+    arson_p = DEMO_SAMPLES_DIR / "Arson015.mp4"
+    samples_ok = robbery_p.is_file() and normal_p.is_file() and arson_p.is_file()
+    checks.append(("H.264 Benchmark Demo Samples", samples_ok, "Robbery037, Normal008, Arson015"))
+
+    # Output directory check
+    out_ok = BASE_OUTPUTS_DIR.is_dir() and os.access(BASE_OUTPUTS_DIR, os.W_OK)
+    checks.append(("Output Directory Writable", out_ok, str(BASE_OUTPUTS_DIR)))
+
+    rows = []
+    for name, ok, detail in checks:
+        icon = "<span style='color: #2b8a3e; font-weight: bold;'>✓ PASS</span>" if ok else "<span style='color: #c92a2a; font-weight: bold;'>✗ FAIL</span>"
+        rows.append(f"<tr><td style='padding: 6px 12px;'><strong>{name}</strong></td><td style='padding: 6px 12px;'>{icon}</td><td style='padding: 6px 12px; font-family: monospace;'>{detail}</td></tr>")
+
+    table_html = f"""
+    <div style='background: white; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; margin-top: 10px;'>
+        <table style='width: 100%; border-collapse: collapse; font-size: 13px;'>
+            <thead style='background: #f1f3f5;'>
+                <tr>
+                    <th style='padding: 8px 12px; text-align: left;'>Subsystem Component</th>
+                    <th style='padding: 8px 12px; text-align: left;'>Status</th>
+                    <th style='padding: 8px 12px; text-align: left;'>Diagnostics / Path</th>
+                </tr>
+            </thead>
+            <tbody>
+                {''.join(rows)}
+            </tbody>
+        </table>
+    </div>
+    """
+    return table_html
 
 
 # ==============================================================================
@@ -543,31 +760,27 @@ def analyze_benchmark_sample(
 
 def create_full_application() -> gr.Blocks:
     """Constructs the comprehensive 4-tab Gradio Application."""
-    theme = gr.themes.Soft(
-        primary_hue="blue",
-        secondary_hue="slate",
-    )
-
-    with gr.Blocks(title="Real-Time Video Anomaly Detection & Risk Assessment") as app:
+    with gr.Blocks(title="Real-Time Video Anomaly Detection & Operational Risk Assessment") as app:
         gr.Markdown(
             """
             # 🚨 Real-Time Video Anomaly Detection & Operational Risk Assessment
-            ### Undergraduate Research Capstone System | Frozen S3D Backbone + Dilated Causal TCN + Temporal Persistence
-            *Bridging the gap from continuous snippet-level anomaly scores to actionable, incident-level surveillance alerts.*
+            ### Undergraduate Research Capstone Demonstration | S3D Backbone + Dilated Causal TCN + Temporal Persistence
+            *Bridging the gap from continuous snippet anomaly scores to actionable, incident-level surveillance alerts without ground-truth risk labels.*
             """
         )
 
         with gr.Tabs() as tabs:
 
             # ------------------------------------------------------------------
-            # TAB 1: Live Anomaly Detection (Primary Workflow)
+            # TAB 1: Live Anomaly Detection (Primary Surveillance Console)
             # ------------------------------------------------------------------
             with gr.Tab("🎥 Live Detection (Raw Video)", id="tab_live"):
                 gr.Markdown(
                     """
-                    Upload an arbitrary surveillance video (`.mp4`, `.avi`, `.mov`) or select a preloaded sample.
-                    The system decodes frames sequentially, feeds 16-frame clips into the frozen S3D backbone,
-                    evaluates the causal TCN, smooths scores with online EMA, forms persistent events, and assesses operational risk.
+                    Upload an arbitrary surveillance video (`.mp4`, `.avi`, `.mov`) or select a verified benchmark preset.
+                    The system sequentially decodes frames, extracts 1024-d spatiotemporal representations via frozen S3D,
+                    evaluates the dilated causal TCN, smooths scores with online EMA, forms persistent incident intervals,
+                    and executes deterministic operational risk triage.
                     """
                 )
 
@@ -578,18 +791,23 @@ def create_full_application() -> gr.Blocks:
                             sources=["upload"],
                         )
                         preset_dropdown = gr.Dropdown(
-                            label="Or Select a Demo Preset",
+                            label="Or Select a Verified Demo Preset",
                             choices=["Custom Upload", "Robbery037", "Normal_Videos008", "Arson015"],
                             value="Robbery037",
                         )
                         overlay_toggle = gr.Checkbox(
                             label="Show Detection Overlay (Live HUD Banner)",
                             value=True,
-                            info="When enabled, generates video with operational anomaly/risk HUD overlays.",
+                            info="When checked, renders downloadable video with operational surveillance HUD overlays.",
                         )
-                        start_btn = gr.Button("▶ START ANOMALY DETECTION", variant="primary", size="lg")
+
+                        with gr.Row():
+                            start_btn = gr.Button("▶ START DETECTION", variant="primary", size="lg", scale=2)
+                            stop_btn = gr.Button("⏹ STOP", variant="stop", size="lg", scale=1)
+                            reset_btn = gr.Button("🔄 RESET", variant="secondary", size="lg", scale=1)
 
                         with gr.Accordion("⚙️ Advanced Decision Parameters", open=False):
+                            gr.Markdown("*Adjusts postprocessing decision thresholds without modifying model weights.*")
                             ema_slider = gr.Slider(0.05, 0.95, value=0.25, step=0.05, label="Causal EMA Smoothing Factor (alpha)")
                             high_slider = gr.Slider(0.40, 0.90, value=0.60, step=0.05, label="Event Trigger High Threshold (T_high)")
                             low_slider = gr.Slider(0.10, 0.60, value=0.40, step=0.05, label="Event Sustain Low Threshold (T_low)")
@@ -598,10 +816,10 @@ def create_full_application() -> gr.Blocks:
 
                     with gr.Column(scale=6):
                         status_card = gr.HTML(
-                            value="<div style='padding: 16px; border: 2px dashed #bbb; border-radius: 12px; text-align: center; color: #777;'>Upload a video and click 'START ANOMALY DETECTION' to begin live triage.</div>"
+                            value="<div style='padding: 16px; border: 2px dashed #bbb; border-radius: 12px; text-align: center; color: #777;'>Upload a video or select a preset, then click <strong>'START ANOMALY DETECTION'</strong>.</div>"
                         )
                         video_output_display = gr.Video(
-                            label="Surveillance Playback",
+                            label="Surveillance Playback (Browser-Safe H.264)",
                             interactive=False,
                         )
 
@@ -610,7 +828,7 @@ def create_full_application() -> gr.Blocks:
 
                 with gr.Row():
                     events_table = gr.Dataframe(
-                        label="Detected Persistent Incidents (Operational Events)",
+                        label="Detected Persistent Incidents (Operational Events Table)",
                         interactive=False,
                     )
 
@@ -618,18 +836,22 @@ def create_full_application() -> gr.Blocks:
                     telemetry_box = gr.Textbox(
                         label="System Telemetry & Hardware Profiling",
                         interactive=False,
-                        lines=4,
+                        lines=5,
                     )
 
                 with gr.Row():
-                    gr.Markdown("### 📥 Download Incident Artifacts")
+                    gr.Markdown("### 📥 Download Isolated Run Artifacts")
                 with gr.Row():
                     annotated_video_download = gr.File(label="Annotated Video (.mp4)")
+                    clean_video_download = gr.File(label="Clean Video (.mp4)")
                     scores_csv_download = gr.File(label="Continuous Scores (.csv)")
-                    events_csv_download = gr.File(label="Incident Report (.csv)")
-                    json_report_download = gr.File(label="Telemetry Summary (.json)")
+                    events_csv_download = gr.File(label="Incident Events (.csv)")
+                with gr.Row():
+                    plot_download = gr.File(label="High-Res Timeline (.png)")
+                    json_report_download = gr.File(label="Summary Report (.json)")
+                    manifest_download = gr.File(label="Run Manifest (.json)")
 
-                # Callback wiring for Tab 1
+                # Wiring for Tab 1
                 start_btn.click(
                     fn=run_streaming_detection,
                     inputs=[
@@ -649,9 +871,40 @@ def create_full_application() -> gr.Blocks:
                         telemetry_box,
                         video_output_display,
                         annotated_video_download,
+                        clean_video_download,
                         scores_csv_download,
                         events_csv_download,
+                        plot_download,
                         json_report_download,
+                        manifest_download,
+                    ],
+                )
+
+                stop_btn.click(
+                    fn=stop_streaming_detection,
+                    inputs=[],
+                    outputs=[],
+                )
+
+                reset_btn.click(
+                    fn=reset_application_session,
+                    inputs=[],
+                    outputs=[
+                        video_input,
+                        preset_dropdown,
+                        overlay_toggle,
+                        status_card,
+                        timeline_plot,
+                        events_table,
+                        telemetry_box,
+                        video_output_display,
+                        annotated_video_download,
+                        clean_video_download,
+                        scores_csv_download,
+                        events_csv_download,
+                        plot_download,
+                        json_report_download,
+                        manifest_download,
                     ],
                 )
 
@@ -661,8 +914,9 @@ def create_full_application() -> gr.Blocks:
             with gr.Tab("🧪 UCF-Crime Benchmark Examples", id="tab_benchmark"):
                 gr.Markdown(
                     """
-                    Inspect pre-cached benchmark samples across all 13 UCF-Crime anomaly categories plus normal videos.
-                    This runs inference in under 50 ms directly on extracted features, ideal for quick viva demonstrations.
+                    Inspect pre-cached benchmark samples across all 13 UCF-Crime anomaly categories plus normal surveillance videos.
+                    Runs scoring in under 50 ms directly on spatiotemporal features extracted by the frozen S3D backbone.
+                    *Clearly separates dataset ground truth labels from causal model predictions.*
                     """
                 )
 
@@ -721,7 +975,7 @@ def create_full_application() -> gr.Blocks:
                         | **Exp D** | (C) + Deterministic Risk Layer | 0.8750 | 0.8705 | 53 High / 14 Med / 174 Normal | 0.093 ms | 10,800* | 44.1 MB | **MEASURED** |
                         | **Exp E** | **Full Decoupled Pipeline (E2E)** | **0.8750** | **0.8705** | **-43.5% Fragmentation** | **20.23 ms** | **791.1 FPS** | **1.08 GB** | **MEASURED** |
 
-                        *\*Downstream scoring latency excluding 3D video decoding. E2E includes full S3D feature extraction.*
+                        *\*Downstream scoring latency excluding 3D video decoding. E2E includes full S3D feature extraction on local RTX 3050.*
                         """
                     )
 
@@ -752,9 +1006,9 @@ def create_full_application() -> gr.Blocks:
                 gr.Markdown(
                     """
                     ### Scientific Problem Statement & Three-Task Distinction
-                    Traditional video anomaly detection systems produce continuous anomaly scores $s_t \\in [0, 1]$,
-                    leaving security operators to manually interpret oscillating values. This research investigates whether
-                    weakly supervised spatiotemporal representations can be augmented with **causal temporal modeling**,
+                    Traditional video anomaly detection systems output raw continuous anomaly scores $s_t \\in [0, 1]$,
+                    leaving security operators to manually decipher oscillating values. This research investigates whether
+                    weakly supervised spatiotemporal representations can be extended with **causal temporal modeling**,
                     **temporal persistence**, and a **transparent risk-oriented decision layer** to produce stable incident-level alerts:
 
                     ```text
@@ -777,8 +1031,11 @@ def create_full_application() -> gr.Blocks:
                     - **No Spatial Bounding Boxes:** Our system is a temporal sequence detector. It does not perform spatial object localization. Overlays represent frame-level triage alerts.
                     - **Zero Future Leakage:** The Causal TCN uses explicit left-padding $(K-1) \\cdot d$ and `ChannelLayerNorm`, mathematically guaranteeing that future video snippets do not contaminate past predictions.
                     - **Hardware Budget Compliance:** Entire pipeline executed on a local 4 GB VRAM budget (NVIDIA GeForce RTX 3050 Laptop GPU), peaking at 1.08 GB VRAM.
+
+                    ### Real-Time System Health Check
                     """
                 )
+                health_html = gr.HTML(value=check_system_health())
 
     return app
 

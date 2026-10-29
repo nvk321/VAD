@@ -63,6 +63,10 @@ mlruns/
 experiments/*/artifacts/
 experiments/*/checkpoints/
 
+# Application and Demo Outputs
+outputs/**
+!outputs/.gitkeep
+
 # Environment and Secrets
 .env
 .env.*
